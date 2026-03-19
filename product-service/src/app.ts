@@ -1,12 +1,11 @@
 import express from "express";
 import dotenv from "dotenv";
-import authRoutes from "./routes/user.routes.js";
 import { validateEnv } from "./utils/validateEnv.js";
 import helmet from "helmet";
 
 
 
-validateEnv();
+// validateEnv();
 const app = express();
 dotenv.config();
 app.use(express.json())
@@ -14,9 +13,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
  
 app.get("/", (req, res) => {
-  res.send("this is from user service of port 3001");
+  res.send("this is from product service of port 3002");
 });
 
-app.use("/v1/auth", authRoutes);
 
 export default app;

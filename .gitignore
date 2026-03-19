@@ -1,6 +1,11 @@
-# node module, env  , .vscode, prisma generated files
+# node module, env  , .vscode, prisma generated files logs
+
 node_modules
 .env
 /generated/prisma
 .vscode
 
+
+# Ignore all log files
+logs/
+*.log
