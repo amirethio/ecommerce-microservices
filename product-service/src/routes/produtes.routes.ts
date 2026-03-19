@@ -56,7 +56,7 @@ router.get("/categories", getCategories);
  *       409:
  *         description: Category already exists
  */
-router.post("/categories", protect, restrictTo("ADMIN"), createCategory);
+router.post("/categories", protect, restrictTo("ADMIN"), createCategory); 
 
 /**
  * @swagger
@@ -177,7 +177,7 @@ router.get("/:idOrSlug", getProduct);
 router.post(
   "/",
   protect,
-  restrictTo("ADMIN"),
+  restrictTo("ADMIN"), 
   createProduct as express.RequestHandler,
 );
 

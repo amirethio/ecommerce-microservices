@@ -12,7 +12,7 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
  
-app.use("/api/v1/products", productRoutes);
+app.use("/api/v1", productRoutes);
 
 app.get("/", (req, res) => {
   res.send("this is from product service of port 3002");
@@ -20,3 +20,4 @@ app.get("/", (req, res) => {
 
 
 export default app;
+

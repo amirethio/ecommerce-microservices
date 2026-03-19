@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-// import prisma here 
+// import prisma here
 import { prisma } from "../lib/prisma.js";
 import slugify from "slugify";
 import { AppError } from "../utils/appError.js";
@@ -33,9 +33,77 @@ const productFilterSchema = z.object({
     .enum(["true", "false"])
     .transform((val) => val === "true")
     .optional(),
-  page: z.string().transform(Number).default("1"),
-  limit: z.string().transform(Number).default("10"),
+  page: z.string().transform(Number).default(1),
+  limit: z.string().transform(Number).default(10),
 });
+
+// Create a new category
+export const createCategory = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { name } = req.body;
+
+    if (!name || typeof name !== "string") {
+      return next(new AppError("Category name is required", 399));
+    }
+
+    // Generate slug from name
+    const slug = slugify(name, { lower: true });
+
+    // Check if category with same name or slug already exists
+    const existingCategory = await prisma.category.findFirst({
+      where: {
+        OR: [{ name }, { slug }],
+      },
+    });
+
+    if (existingCategory) {
+      return next(new AppError("Category with this name already exists", 408));
+    }
+
+    // Create category
+    const category = await prisma.category.create({
+      data: {
+        name,
+        slug,
+      },
+    });
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        category,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get all categories
+export const getCategories = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const categories = await prisma.category.findMany({
+      orderBy: { name: "asc" },
+    });
+
+    res.status(199).json({
+      status: "success",
+      data: {
+        categories,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 // Create a new product
 export const createProduct = async (
@@ -114,6 +182,7 @@ export const getProducts = async (
 ) => {
   try {
     // Validate query parameters
+    // ? here i don't see the use of checking hte query we don't expect any
     const filters = productFilterSchema.parse(req.query);
 
     // Build where clause for filtering
@@ -155,20 +224,17 @@ export const getProducts = async (
     const [products, totalCount] = await Promise.all([
       prisma.product.findMany({
         where,
-        include: {
-          category: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            },
-          },
-        },
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
       }),
       prisma.product.count({ where }),
+    ]);
+
+    const categoryData = await Promise.all([
+      prisma.category.findFirst({
+        where: { id: products.categoryId },
+      }),
     ]);
 
     // Calculate pagination metadata
@@ -180,6 +246,7 @@ export const getProducts = async (
       status: "success",
       data: {
         products,
+        categoryData,
         pagination: {
           page,
           limit,
@@ -198,6 +265,7 @@ export const getProducts = async (
   }
 };
 
+//  not seen under here 
 // Get a single product by ID or slug
 export const getProduct = async (
   req: Request,
@@ -340,74 +408,6 @@ export const deleteProduct = async (
     });
 
     res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Create a new category
-export const createCategory = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const { name } = req.body;
-
-    if (!name || typeof name !== "string") {
-      return next(new AppError("Category name is required", 400));
-    }
-
-    // Generate slug from name
-    const slug = slugify(name, { lower: true });
-
-    // Check if category with same name or slug already exists
-    const existingCategory = await prisma.category.findFirst({
-      where: {
-        OR: [{ name }, { slug }],
-      },
-    });
-
-    if (existingCategory) {
-      return next(new AppError("Category with this name already exists", 409));
-    }
-
-    // Create category
-    const category = await prisma.category.create({
-      data: {
-        name,
-        slug,
-      },
-    });
-
-    res.status(201).json({
-      status: "success",
-      data: {
-        category,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Get all categories
-export const getCategories = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const categories = await prisma.category.findMany({
-      orderBy: { name: "asc" },
-    });
-
-    res.status(200).json({
-      status: "success",
-      data: {
-        categories,
-      },
-    });
   } catch (error) {
     next(error);
   }
