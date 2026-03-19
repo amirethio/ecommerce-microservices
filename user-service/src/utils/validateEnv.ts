@@ -1,24 +1,16 @@
-import { z } from "zod";
-import { logger } from "./logger";
+import { z , ZodError} from "zod";
+import { logger } from "./logger.js";
 
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
-  PORT: z.string().default("3000"),
+  PORT: z.string().default("3001"),
   DATABASE_URL: z.string(),
   JWT_ACCESS_SECRET: z.string(),
   JWT_REFRESH_SECRET: z.string(),
   JWT_ACCESS_EXPIRES_IN: z.string(),
   JWT_REFRESH_EXPIRES_IN: z.string(),
-  MINIO_ENDPOINT: z.string(),
-  MINIO_PORT: z.string(),
-  MINIO_ACCESS_KEY: z.string(),
-  MINIO_SECRET_KEY: z.string(),
-  MINIO_BUCKET_NAME: z.string(),
-  MINIO_USE_SSL: z.string().transform((val) => val === "true"),
-  CHAPA_SECRET_KEY: z.string(),
-  CHAPA_WEBHOOK_SECRET: z.string(),
   EMAIL_HOST: z.string(),
   EMAIL_PORT: z.string().transform(Number),
   EMAIL_USER: z.string(),
@@ -31,8 +23,10 @@ export function validateEnv() {
     envSchema.parse(process.env);
     logger.info("Environment variables validated successfully");
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      logger.error("Invalid environment variables:", error.errors);
+    if (error instanceof ZodError) {
+      logger.error("Invalid environment variables:", error.issues);
+      console.log("sth is happen while validating the schema");
+      
       process.exit(1);
     }
   }

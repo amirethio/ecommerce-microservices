@@ -1,7 +1,11 @@
 import express from "express";
 import dotenv from "dotenv";
 import authRoutes from "./routes/user.routes.js";
+import { validateEnv } from "./utils/validateEnv.js";
 
+
+
+validateEnv();
 const app = express();
 dotenv.config();
 app.use(express.json());

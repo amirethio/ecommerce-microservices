@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { logger } from "./logger";
+import { logger } from "./logger.js";
 
 interface EmailOptions {
   to: string;
@@ -19,7 +19,6 @@ export const sendEmail = async (options: EmailOptions) => {
         pass: process.env.EMAIL_PASS,
       },
     });
-
 
     // Looking to send emails in production? Check out our Email API/SMTP product!
 
