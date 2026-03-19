@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 // import prisma here 
-
+import { prisma } from "../lib/prisma.js";
 import slugify from "slugify";
 import { AppError } from "../utils/appError.js";
 
@@ -57,7 +57,7 @@ export const createProduct = async (
     }
 
     // Generate slug from name
-    const slug = slugify(validatedData.name, { lower: true });
+    const slug = slugify.default(validatedData.name, { lower: true });
 
     // Check if slug already exists
     const existingProduct = await prisma.product.findUnique({

@@ -12,6 +12,7 @@ import { protect, restrictTo } from "../middlewares/auth.middleware.js";
 
 const router: express.Router = express.Router();
 
+
 /**
  * @swagger
  * /products/categories:
