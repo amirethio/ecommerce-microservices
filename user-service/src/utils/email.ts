@@ -1,11 +1,11 @@
-import nodemailer from "nodemailer"
-import { logger } from "./logger"
+import nodemailer from "nodemailer";
+import { logger } from "./logger";
 
 interface EmailOptions {
-  to: string
-  subject: string
-  text: string
-  html: string
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
 }
 
 export const sendEmail = async (options: EmailOptions) => {
@@ -18,7 +18,10 @@ export const sendEmail = async (options: EmailOptions) => {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
-    })
+    });
+
+
+    // Looking to send emails in production? Check out our Email API/SMTP product!
 
     // Define email options
     const mailOptions = {
@@ -27,15 +30,15 @@ export const sendEmail = async (options: EmailOptions) => {
       subject: options.subject,
       text: options.text,
       html: options.html,
-    }
+    };
 
     // Send email
-    const info = await transporter.sendMail(mailOptions)
-    logger.info(`Email sent: ${info.messageId}`)
+    const info = await transporter.sendMail(mailOptions);
+    logger.info(`Email sent: ${info.messageId}`);
 
-    return info
+    return info;
   } catch (error) {
-    logger.error("Error sending email:", error)
-    throw error
+    logger.error("Error sending email:", error);
+    throw error;
   }
-}
+};

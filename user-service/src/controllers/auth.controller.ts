@@ -185,7 +185,7 @@ export const login = async (
 
     // Store refresh token
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
+    expiresAt.setDate(expiresAt.getDate() + 7); // after 7 days
 
     await prisma.refreshToken.create({
       data: {
@@ -377,6 +377,7 @@ export const forgotPassword = async (
       },
     });
 
+    
     // Send email with reset code
     await sendEmail({
       to: user.email,
