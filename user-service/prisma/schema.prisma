@@ -17,26 +17,15 @@ enum Role {
   CUSTOMER
 }
 
-enum OrderStatus {
-  PENDING
-  PAID
-  SHIPPED
-  DELIVERED
-  CANCELLED
-}
-
 model User {
-  id                   String         @id @default(uuid())
-  email                String         @unique
+  id                   String    @id @default(uuid())
+  email                String    @unique
   password             String
   firstName            String?
   lastName             String?
-  role                 Role           @default(CUSTOMER)
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
-  refreshTokens        RefreshToken[]
-  cart                 Cart?
-  orders               Order[]
+  role                 Role      @default(CUSTOMER)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
   passwordResetCode    String?
   passwordResetExpires DateTime?
 }
@@ -45,47 +34,9 @@ model RefreshToken {
   id        String   @id @default(uuid())
   token     String   @unique
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
   revoked   Boolean  @default(false)
-
-  @@index([userId])
-}
-
-model Cart {
-  id        String     @id @default(uuid())
-  userId    String     @unique
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     CartItem[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-
-  @@index([userId])
-}
-
-model CartItem {
-  id        String   @id @default(uuid())
-  cartId    String
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  productId String
-  quantity  Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([cartId, productId])
-  @@index([cartId])
-  @@index([productId])
-}
-
-model Order {
-  id          String      @id @default(uuid())
-  userId      String
-  user        User        @relation(fields: [userId], references: [id])
-  status      OrderStatus @default(PENDING)
-  totalAmount Decimal     @db.Decimal(10, 2)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
 
   @@index([userId])
 }
