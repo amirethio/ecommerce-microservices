@@ -1,0 +1,6 @@
+# node module, env  , .vscode, prisma generated files
+node_modules
+.env
+/generated/prisma
+.vscode
+
