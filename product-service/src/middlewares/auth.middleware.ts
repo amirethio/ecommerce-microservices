@@ -75,7 +75,6 @@ export const protect = async (
 };
 
 export const restrictTo = (...roles: string[]) => {
-  console.log("its here");
   
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {

@@ -51,7 +51,7 @@ export const createCategory = async (
     }
 
     // Generate slug from name
-    const slug = slugify(name, { lower: true });
+    const slug = slugify.default(name, { lower: true });
 
     // Check if category with same name or slug already exists
     const existingCategory = await prisma.category.findFirst({
@@ -93,8 +93,7 @@ export const getCategories = async (
     const categories = await prisma.category.findMany({
       orderBy: { name: "asc" },
     });
-
-    res.status(199).json({
+    res.status(200).json({
       status: "success",
       data: {
         categories,
@@ -221,21 +220,20 @@ export const getProducts = async (
     const skip = (page - 1) * limit;
 
     // Get products with pagination
-    const [products, totalCount] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.product.count({ where }),
-    ]);
+  const [products, totalCount] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      include: {
+        category: true,
+      },
+    }),
+    prisma.product.count({ where }),
+  ]);
 
-    const categoryData = await Promise.all([
-      prisma.category.findFirst({
-        where: { id: products.categoryId },
-      }),
-    ]);
+
 
     // Calculate pagination metadata
     const totalPages = Math.ceil(totalCount / limit);
@@ -246,7 +244,6 @@ export const getProducts = async (
       status: "success",
       data: {
         products,
-        categoryData,
         pagination: {
           page,
           limit,
@@ -265,7 +262,6 @@ export const getProducts = async (
   }
 };
 
-//  not seen under here 
 // Get a single product by ID or slug
 export const getProduct = async (
   req: Request,
@@ -273,7 +269,8 @@ export const getProduct = async (
   next: NextFunction,
 ) => {
   try {
-    const { idOrSlug } = req.params;
+  
+    const idOrSlug = req.params.idOrSlug as string;
 
     // Check if parameter is UUID or slug
     const isUuid =
@@ -284,15 +281,9 @@ export const getProduct = async (
     // Find product by ID or slug
     const product = await prisma.product.findFirst({
       where: isUuid ? { id: idOrSlug } : { slug: idOrSlug },
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-      },
+    });
+    const categoryData = await prisma.category.findFirst({
+      where: { id: product?.categoryId },
     });
 
     if (!product) {
@@ -303,6 +294,7 @@ export const getProduct = async (
       status: "success",
       data: {
         product,
+        categoryData,
       },
     });
   } catch (error) {
@@ -317,7 +309,7 @@ export const updateProduct = async (
   next: NextFunction,
 ) => {
   try {
-    const { id } = req.params;
+    const id= req.params.id as string;
 
     // Validate request body
     const validatedData = updateProductSchema.parse(req.body);
@@ -345,7 +337,7 @@ export const updateProduct = async (
     // Generate new slug if name is updated
     let slug: string | undefined;
     if (validatedData.name && validatedData.name !== existingProduct.name) {
-      slug = slugify(validatedData.name, { lower: true });
+      slug = slugify.default(validatedData.name, { lower: true });
 
       // Check if new slug already exists
       const productWithSlug = await prisma.product.findFirst({
@@ -391,7 +383,7 @@ export const deleteProduct = async (
   next: NextFunction,
 ) => {
   try {
-    const { id } = req.params;
+    const id= req.params.id as string;
 
     // Check if product exists
     const product = await prisma.product.findUnique({
