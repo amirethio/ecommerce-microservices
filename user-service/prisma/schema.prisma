@@ -40,3 +40,10 @@ model RefreshToken {
 
   @@index([userId])
 }
+
+model DashboardStats {
+  id                String   @id @default(uuid())
+  date              DateTime @unique
+  newUserCount      Int
+  createdAt         DateTime @default(now())
+}

@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    networks:
+      - user-network
+
+  postgres:
+    image: postgres:15.4
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=user
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - user-network
+
+networks:
+  user-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
