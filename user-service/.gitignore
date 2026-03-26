@@ -3,3 +3,17 @@ node_modules
 .env
 
 /generated/prisma
+
+coverage/
+*.lcov
+
+*.log
+
+*.http
+*.rest
+
+.DS_Store
+.vscode
+.idea
+
+pnpm-*

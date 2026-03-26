@@ -2,9 +2,13 @@
 
 node_modules
 .env
-/generated/prisma
-.vscode
 
+/generated/prisma
+
+coverage/
+*.lcov
+
+.vscode
 
 # Ignore all log files
 logs/

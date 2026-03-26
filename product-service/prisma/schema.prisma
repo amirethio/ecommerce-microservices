@@ -35,3 +35,13 @@ model Product {
   @@index([slug])
 }
 
+model DashboardStats {
+  id                String   @id @default(uuid())
+  date              DateTime @unique
+  totalSales        Decimal  @db.Decimal(10, 2)
+  orderCount        Int
+  productsSold      Int
+  avgOrderValue     Decimal  @db.Decimal(10, 2)
+  topSellingProduct String?
+  createdAt         DateTime @default(now())
+}
