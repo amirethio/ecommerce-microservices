@@ -1,6 +1,6 @@
 import express from "express";
 import {
-//   createReview,
+  createReview,
 //   updateReview,
 //   deleteReview,
 //   getProductReviews,
@@ -51,8 +51,8 @@ const router: express.Router = express.Router();
  *       409:
  *         description: Already reviewed this product
  */
-// router.post("/", protect, createReview);
-
+router.post("/", createReview);
+// protect
 /**
  * @swagger
  * /reviews/{id}:
