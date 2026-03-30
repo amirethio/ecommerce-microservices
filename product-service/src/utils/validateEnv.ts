@@ -5,10 +5,10 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
-  // PORT: z.string().default("3002"),
+  PORT: z.string().default("3002"),
   DATABASE_URL: z.string(),
-  // GATEWAY_URL: z.string(),
-  // GATEWAY_SECRET: z.string(),
+  GATEWAY_URL: z.string(),
+  GATEWAY_SECRET: z.string(),
   JWT_ACCESS_SECRET: z.string(),
   JWT_ACCESS_EXPIRES_IN: z.string(),
 });
