@@ -18,3 +18,5 @@ coverage/
 
 pnpm-*
 /generated/prisma
+
+/generated/prisma
