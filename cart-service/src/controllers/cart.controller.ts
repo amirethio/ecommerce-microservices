@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import {
   addToCart,
   clearCartByUserId,
@@ -28,7 +28,7 @@ const getUserId = (req: Request, res: Response) => {
   return null;
 };
 
-export const getCart = async (req: Request, res: Response) => {
+export const getCart = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = getUserId(req, res);
     if (!userId) {
@@ -37,14 +37,15 @@ export const getCart = async (req: Request, res: Response) => {
 
     const cart = await getCartByUserId(userId);
     res.status(200).json({ status: 'success', data: { cart } });
-  } catch (_error) {
-    res.status(500).json({ status: 'error', message: 'Failed to get cart' });
+  } catch (error) {
+    next(error);
   }
 };
 
 export const createCartItem = async (
   req: Request<Record<string, never>, unknown, AddCartItemBody>,
   res: Response,
+  next: NextFunction,
 ) => {
   try {
     const userId = getUserId(req, res);
@@ -78,14 +79,15 @@ export const createCartItem = async (
 
     const cart = await addToCart(userId, productId, quantity, price);
     res.status(200).json({ status: 'success', data: { cart } });
-  } catch (_error) {
-    res.status(500).json({ status: 'error', message: 'Failed to add item to cart' });
+  } catch (error) {
+    next(error);
   }
 };
 
 export const patchCartItem = async (
   req: Request<{ itemId: string }, unknown, UpdateCartItemBody>,
   res: Response,
+  next: NextFunction,
 ) => {
   try {
     const userId = getUserId(req, res);
@@ -113,14 +115,15 @@ export const patchCartItem = async (
     }
 
     res.status(200).json({ status: 'success', data: { cart } });
-  } catch (_error) {
-    res.status(500).json({ status: 'error', message: 'Failed to update cart item' });
+  } catch (error) {
+    next(error);
   }
 };
 
 export const deleteCartItem = async (
   req: Request<{ itemId: string }>,
   res: Response,
+  next: NextFunction,
 ) => {
   try {
     const userId = getUserId(req, res);
@@ -139,12 +142,16 @@ export const deleteCartItem = async (
     }
 
     res.status(200).json({ status: 'success', data: { cart } });
-  } catch (_error) {
-    res.status(500).json({ status: 'error', message: 'Failed to remove cart item' });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const clearCart = async (req: Request, res: Response) => {
+export const clearCart = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const userId = getUserId(req, res);
     if (!userId) {
@@ -153,7 +160,7 @@ export const clearCart = async (req: Request, res: Response) => {
 
     const cart = await clearCartByUserId(userId);
     res.status(200).json({ status: 'success', data: { cart } });
-  } catch (_error) {
-    res.status(500).json({ status: 'error', message: 'Failed to clear cart' });
+  } catch (error) {
+    next(error);
   }
 };
