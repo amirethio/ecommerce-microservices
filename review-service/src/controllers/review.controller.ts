@@ -4,12 +4,15 @@ import { prisma } from "../lib/prisma.js";
 import { AppError } from "../utils/appError.js";
 import axios from "axios";
 
-const Url = process.env.PRODUCT_SERVICE_URL || "http://localhost";
+const Url = process.env.SERVICE_URL || "http://localhost";
+const GATEWAY_SECRET = process.env.GATEWAY_SECRET || "super-secret-gateway-key";
 
 const instance = axios.create({
   baseURL: Url,
   timeout: 5000,
+  headers: { "x-gateway-secret": GATEWAY_SECRET },
 });
+
 // Validation schemas
 const createReviewSchema = z.object({
   productId: z.string().uuid(),
@@ -33,48 +36,33 @@ export const createReview = async (
     const validatedData = createReviewSchema.parse(req.body);
     const userId = req.user!.id;
 
-    // check if the product exists using axos from product service
+    //? check if the product exists
     const product = await instance.get(
       `:3002/products/${validatedData.productId} `,
     );
-    console.log(product);
-    
-
-    // const product = await prisma.product.findUnique({
-    //   where: { id: validatedData.productId },
-    // });
-
-    if (!product) {
+    if (!product.data) {
       return next(new AppError("Product not found", 404));
     }
 
     // Check if user has purchased the product
-    const hasPurchased = await prisma.orderItem.findFirst({
-      where: {
-        productId: validatedData.productId,
-        order: {
-          userId,
-          status: { in: ["PAID", "SHIPPED", "DELIVERED"] },
-        },
-      },
-    });
+    // get all order of user and check if the product exist
 
-    if (!hasPurchased) {
+    const hasPurchased = await instance.get(
+      `:3004/orders/purchased/${validatedData.productId}`,
+    );
+    if (!hasPurchased.data) {
       return next(
         new AppError("You can only review products you have purchased", 403),
       );
     }
 
     // Check if user has already reviewed this product
-    const existingReview = await prisma.review.findUnique({
+    const existingReview = await prisma.review.findFirst({
       where: {
-        userId_productId: {
-          userId,
-          productId: validatedData.productId,
-        },
+        userId,
+        productId: validatedData.productId,
       },
     });
-
     if (existingReview) {
       return next(new AppError("You have already reviewed this product", 409));
     }
@@ -90,6 +78,10 @@ export const createReview = async (
     });
 
     // Update product average rating
+    // 1. Get all reviews of the product
+    // 2. Calculate average rating
+    // 3. Update product with new average rating and rating count
+
     const productReviews = await prisma.review.findMany({
       where: { productId: validatedData.productId },
       select: { rating: true },
@@ -101,13 +93,18 @@ export const createReview = async (
     );
     const avgRating = totalRating / productReviews.length;
 
-    await prisma.product.update({
-      where: { id: validatedData.productId },
-      data: {
+    // update product with new rating
+
+    const response = await instance.patch(
+      `:3002/products/${validatedData.productId}`,
+      {
         avgRating,
         ratingCount: productReviews.length,
       },
-    });
+    );
+    if (!response.data) {
+      return next(new AppError("Failed to update product rating", 500));
+    }
 
     res.status(201).json({
       status: "success",
@@ -130,7 +127,8 @@ export const updateReview = async (
   next: NextFunction,
 ) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
+
     const validatedData = updateReviewSchema.parse(req.body);
     const userId = req.user!.id;
 
@@ -164,13 +162,18 @@ export const updateReview = async (
         0,
       );
       const avgRating = totalRating / productReviews.length;
+      // add the updated avgRating
 
-      await prisma.product.update({
-        where: { id: review.productId },
-        data: {
+      const response = await instance.patch(
+        `:3002/products/${review.productId}`,
+        {
           avgRating,
+          ratingCount: productReviews.length,
         },
-      });
+      );
+      if (!response.data) {
+        return next(new AppError("Failed to update product rating", 500));
+      }
     }
 
     res.status(200).json({
@@ -187,14 +190,14 @@ export const updateReview = async (
   }
 };
 
-// Delete a review
+// Delete a review service
 export const deleteReview = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const userId = req.user!.id;
     const isAdmin = req.user!.role === "ADMIN";
 
@@ -230,23 +233,28 @@ export const deleteReview = async (
       );
       const avgRating = totalRating / productReviews.length;
 
-      await prisma.product.update({
-        where: { id: review.productId },
-        data: {
+      const response = await instance.patch(
+        `:3002/products/${review.productId}`,
+        {
           avgRating,
           ratingCount: productReviews.length,
         },
-      });
+      );
+      if (!response.data) {
+        return next(new AppError("Failed to update product rating", 500));
+      }
     } else {
-      await prisma.product.update({
-        where: { id: review.productId },
-        data: {
+      const response = await instance.patch(
+        `:3002/products/${review.productId}`,
+        {
           avgRating: null,
           ratingCount: 0,
         },
-      });
+      );
+      if (!response.data) {
+        return next(new AppError("Failed to update product rating", 500));
+      }
     }
-
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -260,40 +268,49 @@ export const getProductReviews = async (
   next: NextFunction,
 ) => {
   try {
-    const { productId } = req.params;
+    const { productId } = req.params as { productId: string };
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
     // Check if product exists
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
-    });
 
-    if (!product) {
+    const product = await instance.get(`:3002/products/${productId}`);
+    if (!product.data) {
       return next(new AppError("Product not found", 404));
     }
 
     // Get reviews with pagination
+
     const [reviews, totalCount] = await Promise.all([
       prisma.review.findMany({
         where: { productId },
-        include: {
-          user: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-            },
-          },
-        },
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
+
       prisma.review.count({ where: { productId } }),
     ]);
 
+    // find user id and get info from user service
+    const UserIds = [...new Set(reviews.map((review) => review.userId))];
+
+    const userResponse = await instance.post(":3001/users/batch", {
+      ids: UserIds,
+    });
+    if (!userResponse.data) {
+      return next(new AppError("Failed to fetch user data", 500));
+    }
+
+    const user = userResponse.data;
+    // mapping user info to reviews
+    const reviewsWithUser = reviews.map((review) => {
+      const userInfo = user.find(
+        (userData: any) => userData.id === review.userId,
+      );
+      return { ...review, user: userInfo };
+    });
     // Calculate pagination metadata
     const totalPages = Math.ceil(totalCount / limit);
     const hasNextPage = page < totalPages;
@@ -302,7 +319,7 @@ export const getProductReviews = async (
     res.status(200).json({
       status: "success",
       data: {
-        reviews,
+        reviewsWithUser,
         pagination: {
           page,
           limit,
@@ -334,22 +351,30 @@ export const getUserReviews = async (
     const [reviews, totalCount] = await Promise.all([
       prisma.review.findMany({
         where: { userId },
-        include: {
-          product: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              images: true,
-            },
-          },
-        },
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
       prisma.review.count({ where: { userId } }),
     ]);
+
+    const ProductIds = [...new Set(reviews.map((review) => review.productId))];
+
+    const productResponse = await instance.post(":3002/products/batch", {
+      ids: ProductIds,
+    });
+    if (!productResponse.data) {
+      return next(new AppError("Failed to fetch product data", 500));
+    }
+
+    const products = productResponse.data;
+    // mapping product info to reviews
+    const reviewsWithProducts = reviews.map((review) => {
+      const productInfo = products.find(
+        (productData: any) => productData.id === review.productId,
+      );
+      return { ...review, product: productInfo };
+    });
 
     // Calculate pagination metadata
     const totalPages = Math.ceil(totalCount / limit);
@@ -359,7 +384,7 @@ export const getUserReviews = async (
     res.status(200).json({
       status: "success",
       data: {
-        reviews,
+        reviewsWithProducts,
         pagination: {
           page,
           limit,

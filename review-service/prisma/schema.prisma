@@ -7,11 +7,17 @@ datasource db {
   provider = "postgresql"
 }
 
+
 model Review {
-  id        String   @id
+  id        String   @id @default(uuid())
   userId    String
+  productId String
   rating    Int      @db.SmallInt
   comment   String?
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
 }

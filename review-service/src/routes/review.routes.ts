@@ -1,10 +1,10 @@
 import express from "express";
 import {
   createReview,
-//   updateReview,
-//   deleteReview,
-//   getProductReviews,
-//   getUserReviews,
+  updateReview,
+  // deleteReview,
+  getProductReviews,
+  //   getUserReviews,
 } from "../controllers/review.controller";
 import { protect } from "../middlewares/auth.middleware";
 
@@ -51,7 +51,7 @@ const router: express.Router = express.Router();
  *       409:
  *         description: Already reviewed this product
  */
-router.post("/", createReview);
+router.post("/", protect, createReview);
 // protect
 /**
  * @swagger
@@ -91,7 +91,7 @@ router.post("/", createReview);
  *       404:
  *         description: Review not found or not authorized
  */
-// router.patch("/:id", protect, updateReview);
+router.patch("/:id", protect, updateReview);
 
 /**
  * @swagger
@@ -149,7 +149,7 @@ router.post("/", createReview);
  *       404:
  *         description: Product not found
  */
-// router.get("/product/:productId", getProductReviews);
+router.get("/:productId", getProductReviews);
 
 /**
  * @swagger
