@@ -1,0 +1,15 @@
+process.env.NODE_ENV = "test";
+process.env.PORT = "3004";
+process.env.DATABASE_URL = "postgresql://postgres:postgres@localhost:5435/order?schema=orders";
+process.env.GATEWAY_URL = "http://localhost:3000";
+process.env.GATEWAY_SECRET = "test-gateway-secret";
+process.env.JWT_ACCESS_SECRET = "test-jwt-secret";
+process.env.JWT_ACCESS_EXPIRES_IN = "15m";
+process.env.CHAPA_SECRET_KEY = "test-chapa-secret";
+process.env.EMAIL_HOST = "smtp.example.com";
+process.env.EMAIL_PORT = "587";
+process.env.EMAIL_USER = "user";
+process.env.EMAIL_PASS = "pass";
+process.env.EMAIL_FROM = "noreply@example.com";
+export {};
+//# sourceMappingURL=setup.js.map
