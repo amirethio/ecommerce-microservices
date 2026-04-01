@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  coupon-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3011:3011"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    networks:
+      - coupon-network
+
+  postgres:
+    image: postgres:15.4
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=coupon
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - coupon-network
+
+networks:
+  coupon-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
