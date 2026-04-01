@@ -1,0 +1,34 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum CouponType {
+  PERCENTAGE
+  FIXED
+}
+
+model Coupon {
+  id          String     @id @default(uuid())
+  code        String     @unique
+  type        CouponType
+  value       Decimal    @db.Decimal(10, 2)
+  minAmount   Decimal?   @db.Decimal(10, 2)
+  maxAmount   Decimal?   @db.Decimal(10, 2)
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean    @default(true)
+  usageLimit  Int?
+  usageCount  Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
