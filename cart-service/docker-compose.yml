@@ -1,0 +1,30 @@
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: cart-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cartdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  cart-service:
+    build: .
+    container_name: cart-service
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/cartdb
+    ports:
+      - "4004:4004"
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+volumes:
+  postgres_data:
