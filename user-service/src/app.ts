@@ -23,39 +23,39 @@ app.use(helmet());
 
 // Swagger documentation
 const swaggerOptions = {
-	definition: {
-		openapi: "3.0.0",
-		info: {
-			title: "User Service",
-			version: "1.0.0",
-			description: "User Service API",
-		},
-		servers: [
-			{
-				url: "https://ecommerce-backend-tqgh.onrender.com/api/v1",
-			},
-		],
-	},
-	apis: ["./src/routes/*.ts"],
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "User Service",
+      version: "1.0.0",
+      description: "User Service API",
+    },
+    servers: [
+      {
+        url: "https://ecommerce-backend-tqgh.onrender.com/api/v1",
+      },
+    ],
+  },
+  apis: ["./src/routes/*.ts"],
 };
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-// API routes
-app.use("/", authRoutes);
-
 // Health check endpoint
 app.get("/health", (req, res) => {
-	res.status(200).json({ status: "ok" });
+  res.status(200).json({ status: "ok" });
 });
+
+// API routes
+app.use("/", authRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
 
 // Start scheduled jobs in production
 if (process.env.NODE_ENV === "production") {
-	startScheduledJobs();
+  startScheduledJobs();
 }
 
 export default app;
