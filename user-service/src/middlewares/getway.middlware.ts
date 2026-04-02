@@ -7,7 +7,8 @@ export const requireGateway = (
   next: NextFunction,
 ) => {
   const gatewaySecret = req.headers["x-gateway-secret"];
-  const expectedSecret = process.env.GATEWAY_SECRET;
+  const expectedSecret =
+    process.env.GATEWAY_SECRET || "super-secret-gateway-key";
 
   if (!gatewaySecret || gatewaySecret !== expectedSecret) {
     return next(new AppError("Unauthorized access", 401));

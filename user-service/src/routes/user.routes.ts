@@ -8,11 +8,10 @@ import {
   forgotPassword,
   resetPassword,
 } from "../controllers/auth.controller.js";
-
-const router: express.Router = express.Router();
-
+  const router: express.Router = express.Router();
 
 /**
+ *
  * @swagger
  * /auth/register:
  *   post:
@@ -46,6 +45,7 @@ const router: express.Router = express.Router();
  *       409:
  *         description: User already exists
  */
+
 router.post("/register", register);
 
 /**
@@ -75,6 +75,7 @@ router.post("/register", register);
  *       401:
  *         description: Invalid credentials
  */
+
 router.post("/login", login);
 
 /**
@@ -100,6 +101,7 @@ router.post("/login", login);
  *       401:
  *         description: Invalid refresh token
  */
+
 router.post("/refresh-token", refreshToken);
 
 /**
@@ -125,6 +127,7 @@ router.post("/refresh-token", refreshToken);
  *       400:
  *         description: Refresh token is required
  */
+
 router.post("/logout", logout);
 
 /**
@@ -151,6 +154,7 @@ router.post("/logout", logout);
  *       404:
  *         description: User not found
  */
+
 router.post("/forgot-password", forgotPassword);
 
 /**
@@ -186,7 +190,7 @@ router.post("/forgot-password", forgotPassword);
  *       404:
  *         description: User not found
  */
-router.post("/reset-password", resetPassword);
 
+router.post("/reset-password", resetPassword);
 
 export default router;
