@@ -54,6 +54,23 @@ const orderServiceClient = axios.create({
 	timeout: 5000,
 });
 
+const getOrderWithCoupon = async (orderId: string) => {
+	const { data: order } = await orderServiceClient.get(`/${orderId}`);
+
+	let coupon = null;
+
+	if (order.couponId) {
+		coupon = await prisma.coupon.findUnique({
+			where: { id: order.couponId },
+		});
+	}
+
+	return {
+		...order,
+		coupon,
+	};
+};
+
 // Create a new coupon (admin only)
 export const createCoupon = async (
 	req: Request,
@@ -453,9 +470,7 @@ export const applyCoupon = async (
 		const userId = req.user!.id;
 
 		// Find order through order service api assuming that the order service have the GET /:id route implemented
-		const getOrderResponse = await orderServiceClient.get(`/${orderId}`);
-
-		const order = getOrderResponse.data;
+		const order = await getOrderWithCoupon(orderId);
 
 		if (!order) {
 			return next(new AppError("Order not found", 404));
