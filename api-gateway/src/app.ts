@@ -61,8 +61,8 @@ const addGatewaySecret = (
   proxyReq.setHeader("x-gateway-secret", GATEWAY_SECRET);
 };
 
-app.get("/", (req, res) => {
-  res.send("API Gateway is running on port 3000");
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
 });
 
 // Setup Proxies

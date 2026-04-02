@@ -41,13 +41,16 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-// API routes
-app.use("/", productRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
 	res.status(200).json({ status: "ok" });
 });
+
+
+// API routes
+app.use("/", productRoutes);
+
 
 // Error handling middleware
 app.use(errorHandler);
