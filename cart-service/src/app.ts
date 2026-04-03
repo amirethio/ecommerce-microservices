@@ -1,21 +1,23 @@
-import express from "express";
-import cors from "cors";
-import cartRoutes from "./routes/cart.routes";
-import internalRoutes from "./routes/internal.routes";
-import { errorHandler } from "./middleware/errorHandler";
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import { cartRoutes } from './routes/cart.routes';
 
-import type { Application } from "express";
+const app = express();
 
-const app: Application = express();
-
+app.use(helmet());
 app.use(cors());
+app.use(morgan('dev'));
 app.use(express.json());
 
-// ✅ Routes
-app.use("/cart", cartRoutes);
-app.use("/internal", internalRoutes);
+// Routes
 
-// ✅ Error handler MUST be last
-app.use(errorHandler);
+app.use('/api/cart', cartRoutes);
+
+// Health Check
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK' });
+});
 
 export default app;
