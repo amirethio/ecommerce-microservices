@@ -2,9 +2,13 @@ import express from "express";
 import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsDoc from "swagger-jsdoc";
+import { validateEnv } from "./utils/validateEnv.js";
 import "dotenv/config";
 
 const app: express.Application = express();
+
+// Validate environment variables
+validateEnv();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
