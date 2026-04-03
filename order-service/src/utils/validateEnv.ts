@@ -26,8 +26,6 @@ export function validateEnv() {
   } catch (error) {
     if (error instanceof ZodError) {
       logger.error("Invalid environment variables:", error.issues);
-      console.log("sth is happen while validating the schema");
-
       process.exit(1);
     }
   }
