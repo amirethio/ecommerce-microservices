@@ -1,34 +1,32 @@
-import express from "express";
-import { validateEnv } from "./utils/validateEnv.js";
+import express, { type Request, type Response } from "express";
 import helmet from "helmet";
-import swaggerUi from "swagger-ui-express";
 import swaggerJsDoc from "swagger-jsdoc";
-import productRoutes from "./routes/produtes.routes.js";
-import internalRoutes from "./routes/internal.routes.js";
+import swaggerUi from "swagger-ui-express";
 import "dotenv/config";
+
+import { validateEnv } from "./utils/validateEnv.js";
 import { requireGateway } from "./middlewares/getway.middleware.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
+import { orderRoutes } from "./routes/order.routes.js";
+import internalRoutes from "./routes/internal.routes.js";
 
-// Validate environment variables
 validateEnv();
 
 const app: express.Application = express();
 
 app.set("trust proxy", true);
 app.use(requireGateway);
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 
-// Swagger documentation
 const swaggerOptions = {
 	definition: {
 		openapi: "3.0.0",
 		info: {
-			title: "Product Service",
+			title: "Order Service",
 			version: "1.0.0",
-			description: "Product Service API",
+			description: "Order Service API",
 		},
 		servers: [
 			{
@@ -42,15 +40,13 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-// API routes
-app.use("/", productRoutes);
+app.use("/orders", orderRoutes);
 app.use("/internal", internalRoutes);
-// Health check endpoint
-app.get("/health", (req, res) => {
+
+app.get("/health", (_req: Request, res: Response) => {
 	res.status(200).json({ status: "ok" });
 });
 
-// Error handling middleware
 app.use(errorHandler);
 
 export default app;
