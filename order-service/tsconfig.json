@@ -20,5 +20,5 @@
     "esm": true
   },
   "include": ["src/**/*", "generated/prisma/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+  "exclude": ["node_modules", "dist", "dist/**/*", "**/dist/**", "**/*.test.ts"]
 }

@@ -1,6 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { prisma } from "../lib/prisma.js";
 import { AppError } from "../utils/appError.js";
 
 // Extend Express Request interface to include user
@@ -40,19 +39,6 @@ export const protect = async (
       email: string;
       role: string;
     };
-
-
-
-    // Check if user exists
-    //? we will remove below code since we will  we get the user id  and role from the decode we will use that below and if the user already logedout the token expires soon
-
-    // const user = await prisma.user.findUnique({
-    //   where: { id: decoded.id },
-    // });
-
-    // if (!user) {
-    //   return next(new AppError("User no longer exists", 401));
-    // }
 
     // Set user in request
     req.user = {
