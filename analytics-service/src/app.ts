@@ -4,11 +4,16 @@ import swaggerUi from "swagger-ui-express";
 import swaggerJsDoc from "swagger-jsdoc";
 import { validateEnv } from "./utils/validateEnv.js";
 import "dotenv/config";
+import { requireGateway } from "./middleware/getway.middleware.js";
+import { errorHandler } from "./middleware/error.middleware.js";
 
 const app: express.Application = express();
 
 // Validate environment variables
 validateEnv();
+
+app.set("trust proxy", true);
+app.use(requireGateway);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -44,5 +49,8 @@ app.get("", async (req, res) => {
 app.get("/health", (req, res) => {
 	res.status(200).json({ status: "ok" });
 });
+
+// Error handling middleware
+app.use(errorHandler);
 
 export default app;
