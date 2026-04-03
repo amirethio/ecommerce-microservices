@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client-node"
 }
 
 datasource db {
@@ -9,9 +9,13 @@ datasource db {
 
 model CartItem {
   id        String   @id @default(uuid())
-  userId    String
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
   productId String
   quantity  Int
-  price     Float
+  price     Float    // <--- Ensure this exists if you are seeding it!
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, productId])
 }

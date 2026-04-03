@@ -1,166 +1,375 @@
-import { NextFunction, Request, Response } from 'express';
-import {
-  addToCart,
-  clearCartByUserId,
-  getCartByUserId,
-  removeCartItem,
-  updateCartItemQuantity,
-} from '../services/cart.service';
-import { AuthRequest } from '../middleware/authMiddleware';
+import type { Request, Response, NextFunction } from "express"
+import { z } from "zod"
+import { prisma } from "../config/prisma"
+import { AppError } from "../utils/appError"
 
-type AddCartItemBody = {
-  productId?: string;
-  quantity?: number;
-  price?: number;
-};
+// Validation schemas
+const cartItemSchema = z.object({
+  productId: z.string().uuid(),
+  quantity: z.number().int().positive(),
+})
 
-type UpdateCartItemBody = {
-  quantity?: number;
-};
+const updateCartItemSchema = z.object({
+  quantity: z.number().int().positive(),
+})
 
-const getUserId = (req: Request, res: Response) => {
-  const userId = (req as AuthRequest).user?.id;
-  if (userId) {
-    return userId;
-  }
 
-  res.status(401).json({ status: 'error', message: 'Unauthorized' });
-  return null;
-};
+// Helper function to calculate cart total
+const calculateTotal = (items: any[]) => {
+  return items.reduce<number>((sum, item) => {
+    return sum + Number(item.product.price) * item.quantity
+  }, 0)
+}
 
+
+// Get user's cart
 export const getCart = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = getUserId(req, res);
-    if (!userId) {
-      return;
-    }
+    const userId = req.user!.id
 
-    const cart = await getCartByUserId(userId);
-    res.status(200).json({ status: 'success', data: { cart } });
-  } catch (error) {
-    next(error);
-  }
-};
+    let cart = await prisma.cart.findUnique({
+      where: { userId },
+      include: {
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                price: true,
+                images: true,
+                stock: true,
+              },
+            },
+          },
+        },
+      },
+    })
 
-export const createCartItem = async (
-  req: Request<Record<string, never>, unknown, AddCartItemBody>,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const userId = getUserId(req, res);
-    if (!userId) {
-      return;
-    }
-
-    const productId = req.body.productId;
-    const quantity = Number(req.body.quantity);
-    const price = Number(req.body.price);
-
-    if (!productId) {
-      return res
-        .status(400)
-        .json({ status: 'error', message: 'Missing productId' });
-    }
-
-    if (!Number.isInteger(quantity) || quantity <= 0) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'quantity must be a positive integer',
-      });
-    }
-
-    if (!Number.isFinite(price) || price < 0) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'price must be a non-negative number',
-      });
-    }
-
-    const cart = await addToCart(userId, productId, quantity, price);
-    res.status(200).json({ status: 'success', data: { cart } });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const patchCartItem = async (
-  req: Request<{ itemId: string }, unknown, UpdateCartItemBody>,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const userId = getUserId(req, res);
-    if (!userId) {
-      return;
-    }
-
-    const { itemId } = req.params;
-    const quantity = Number(req.body.quantity);
-
-    if (!itemId) {
-      return res.status(400).json({ status: 'error', message: 'Missing itemId' });
-    }
-
-    if (!Number.isInteger(quantity) || quantity <= 0) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'quantity must be a positive integer',
-      });
-    }
-
-    const cart = await updateCartItemQuantity(userId, itemId, quantity);
     if (!cart) {
-      return res.status(404).json({ status: 'error', message: 'Cart item not found' });
+      cart = await prisma.cart.create({
+        data: { userId },
+        include: {
+          items: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  price: true,
+                  images: true,
+                  stock: true,
+                },
+              },
+            },
+          },
+        },
+      })
     }
 
-    res.status(200).json({ status: 'success', data: { cart } });
+    const total = calculateTotal(cart.items)
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        cart: {
+          ...cart,
+          total,
+        },
+      },
+    })
   } catch (error) {
-    next(error);
+    next(error)
   }
-};
+}
 
-export const deleteCartItem = async (
-  req: Request<{ itemId: string }>,
-  res: Response,
-  next: NextFunction,
-) => {
+
+// Add item to cart
+export const addToCart = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = getUserId(req, res);
-    if (!userId) {
-      return;
+    const validatedData = cartItemSchema.parse(req.body)
+    const userId = req.user!.id
+
+    const product = await prisma.product.findUnique({
+      where: { id: validatedData.productId },
+    })
+
+    if (!product) {
+      return next(new AppError("Product not found", 404))
     }
 
-    const { itemId } = req.params;
-    if (!itemId) {
-      return res.status(400).json({ status: 'error', message: 'Missing itemId' });
+    if (product.stock < validatedData.quantity) {
+      return next(new AppError("Not enough stock available", 400))
     }
 
-    const cart = await removeCartItem(userId, itemId);
+    let cart = await prisma.cart.findUnique({
+      where: { userId },
+    })
+
     if (!cart) {
-      return res.status(404).json({ status: 'error', message: 'Cart item not found' });
+      cart = await prisma.cart.create({
+        data: { userId },
+      })
     }
 
-    res.status(200).json({ status: 'success', data: { cart } });
-  } catch (error) {
-    next(error);
-  }
-};
+    const existingItem = await prisma.cartItem.findUnique({
+      where: {
+        cartId_productId: {
+          cartId: cart.id,
+          productId: validatedData.productId,
+        },
+      },
+    })
 
-export const clearCart = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+    if (existingItem) {
+      const newQuantity = existingItem.quantity + validatedData.quantity
+
+      if (product.stock < newQuantity) {
+        return next(new AppError("Not enough stock available", 400))
+      }
+
+      await prisma.cartItem.update({
+        where: { id: existingItem.id },
+        data: { quantity: newQuantity },
+      })
+    } else {
+      await prisma.cartItem.create({
+        data: {
+          cartId: cart.id,
+          productId: validatedData.productId,
+          quantity: validatedData.quantity,
+        },
+      })
+    }
+
+    const updatedCart = await prisma.cart.findUnique({
+      where: { id: cart.id },
+      include: {
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                price: true,
+                images: true,
+                stock: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    if (!updatedCart) {
+      return next(new AppError("Cart not found", 404))
+    }
+
+    const total = calculateTotal(updatedCart.items)
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        cart: {
+          ...updatedCart,
+          total,
+        },
+      },
+    })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return next(new AppError("Validation error", 400, error.format()))
+    }
+    next(error)
+  }
+}
+
+
+// Update cart item quantity
+export const updateCartItem = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = getUserId(req, res);
-    if (!userId) {
-      return;
+    const { itemId } = req.params
+    const validatedData = updateCartItemSchema.parse(req.body)
+    const userId = req.user!.id
+
+    const cart = await prisma.cart.findUnique({
+      where: { userId },
+    })
+
+    if (!cart) {
+      return next(new AppError("Cart not found", 404))
     }
 
-    const cart = await clearCartByUserId(userId);
-    res.status(200).json({ status: 'success', data: { cart } });
+    const cartItem = await prisma.cartItem.findFirst({
+      where: {
+        id: itemId,
+        cartId: cart.id,
+      },
+      include: {
+        product: true,
+      },
+    })
+
+    if (!cartItem) {
+      return next(new AppError("Cart item not found", 404))
+    }
+
+    if (cartItem.product.stock < validatedData.quantity) {
+      return next(new AppError("Not enough stock available", 400))
+    }
+
+    await prisma.cartItem.update({
+      where: { id: itemId },
+      data: {
+        quantity: validatedData.quantity,
+      },
+    })
+
+    const updatedCart = await prisma.cart.findUnique({
+      where: { id: cart.id },
+      include: {
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                price: true,
+                images: true,
+                stock: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    if (!updatedCart) {
+      return next(new AppError("Cart not found", 404))
+    }
+
+    const total = calculateTotal(updatedCart.items)
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        cart: {
+          ...updatedCart,
+          total,
+        },
+      },
+    })
   } catch (error) {
-    next(error);
+    if (error instanceof z.ZodError) {
+      return next(new AppError("Validation error", 400, error.format()))
+    }
+    next(error)
   }
-};
+}
+
+
+// Remove item from cart
+export const removeFromCart = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { itemId } = req.params
+    const userId = req.user!.id
+
+    const cart = await prisma.cart.findUnique({
+      where: { userId },
+    })
+
+    if (!cart) {
+      return next(new AppError("Cart not found", 404))
+    }
+
+    const cartItem = await prisma.cartItem.findFirst({
+      where: {
+        id: itemId,
+        cartId: cart.id,
+      },
+    })
+
+    if (!cartItem) {
+      return next(new AppError("Cart item not found", 404))
+    }
+
+    await prisma.cartItem.delete({
+      where: { id: itemId },
+    })
+
+    const updatedCart = await prisma.cart.findUnique({
+      where: { id: cart.id },
+      include: {
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                price: true,
+                images: true,
+                stock: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    if (!updatedCart) {
+      return next(new AppError("Cart not found", 404))
+    }
+
+    const total = calculateTotal(updatedCart.items)
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        cart: {
+          ...updatedCart,
+          total,
+        },
+      },
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+
+// Clear cart
+export const clearCart = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id
+
+    const cart = await prisma.cart.findUnique({
+      where: { userId },
+    })
+
+    if (!cart) {
+      return next(new AppError("Cart not found", 404))
+    }
+
+    await prisma.cartItem.deleteMany({
+      where: { cartId: cart.id },
+    })
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        cart: {
+          ...cart,
+          items: [],
+          total: 0,
+        },
+      },
+    })
+  } catch (error) {
+    next(error)
+  }
+}
