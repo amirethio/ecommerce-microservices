@@ -4,6 +4,7 @@ import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsDoc from "swagger-jsdoc";
 import productRoutes from "./routes/produtes.routes.js";
+import internalRoutes from "./routes/internal.routes.js";
 import "dotenv/config";
 import { requireGateway } from "./middlewares/getway.middleware.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
@@ -41,16 +42,13 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-
+// API routes
+app.use("/", productRoutes);
+app.use("/internal", internalRoutes);
 // Health check endpoint
 app.get("/health", (req, res) => {
 	res.status(200).json({ status: "ok" });
 });
-
-
-// API routes
-app.use("/", productRoutes);
-
 
 // Error handling middleware
 app.use(errorHandler);

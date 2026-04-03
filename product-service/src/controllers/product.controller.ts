@@ -404,3 +404,142 @@ export const deleteProduct = async (
     next(error);
   }
 };
+
+const internalBatchSchema = z.object({
+  productIds: z.array(z.string().uuid()).min(1),
+});
+
+const internalStockSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        productId: z.string().uuid(),
+        quantity: z.number().int().positive(),
+      }),
+    )
+    .min(1),
+});
+
+export const getProductsBatchInternal = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { productIds } = internalBatchSchema.parse(req.body);
+
+    const products = await prisma.product.findMany({
+      where: {
+        id: { in: productIds },
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        images: true,
+        price: true,
+      },
+    });
+
+    res.status(200).json({
+      status: "success",
+      data: { products },
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return next(new AppError("Validation error", 400, error.format()));
+    }
+
+    next(error);
+  }
+};
+
+export const decrementStockInternal = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { items } = internalStockSchema.parse(req.body);
+
+    await prisma.$transaction(async (tx) => {
+      for (const item of items) {
+        const existing = await tx.product.findUnique({
+          where: { id: item.productId },
+          select: { id: true, name: true, stock: true },
+        });
+
+        if (!existing) {
+          throw new AppError(`Product ${item.productId} not found`, 404);
+        }
+
+        if (existing.stock < item.quantity) {
+          throw new AppError(`Not enough stock for ${existing.name}`, 400);
+        }
+
+        await tx.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: {
+              decrement: item.quantity,
+            },
+          },
+        });
+      }
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "Stock decremented",
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return next(new AppError("Validation error", 400, error.format()));
+    }
+
+    next(error);
+  }
+};
+
+export const incrementStockInternal = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { items } = internalStockSchema.parse(req.body);
+
+    await prisma.$transaction(async (tx) => {
+      for (const item of items) {
+        const existing = await tx.product.findUnique({
+          where: { id: item.productId },
+          select: { id: true },
+        });
+
+        if (!existing) {
+          throw new AppError(`Product ${item.productId} not found`, 404);
+        }
+
+        await tx.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: {
+              increment: item.quantity,
+            },
+          },
+        });
+      }
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "Stock incremented",
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return next(new AppError("Validation error", 400, error.format()));
+    }
+
+    next(error);
+  }
+};

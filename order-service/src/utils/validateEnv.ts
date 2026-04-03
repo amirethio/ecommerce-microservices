@@ -12,6 +12,7 @@ const envSchema = z.object({
   JWT_ACCESS_SECRET: z.string(),
   JWT_ACCESS_EXPIRES_IN: z.string(),
   CHAPA_SECRET_KEY: z.string(),
+  PRODUCT_SERVICE_URL: z.string(),
   EMAIL_HOST: z.string(),
   EMAIL_PORT: z.string(),
   EMAIL_USER: z.string(),
