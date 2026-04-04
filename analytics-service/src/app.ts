@@ -6,6 +6,7 @@ import { validateEnv } from "./utils/validateEnv.js";
 import "dotenv/config";
 import { requireGateway } from "./middleware/getway.middleware.js";
 import { errorHandler } from "./middleware/error.middleware.js";
+import analyticsRoutes from "./routes/analytics.route.js";
 
 const app: express.Application = express();
 
@@ -40,15 +41,13 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-// API routes
-app.get("", async (req, res) => {
-	res.send("Analytics Service API");
-});
-
 // Health check endpoint
 app.get("/health", (req, res) => {
 	res.status(200).json({ status: "ok" });
 });
+
+// API routes
+app.use("/", analyticsRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
