@@ -9,6 +9,9 @@ const envSchema = z.object({
 	GATEWAY_URL: z.string(),
 	GATEWAY_SECRET: z.string(),
 	JWT_ACCESS_SECRET: z.string(),
+	ORDER_SERVICE_URL: z.string(),
+	PRODUCT_SERVICE_URL: z.string(),
+	USER_SERVICE_URL: z.string(),
 });
 
 export function validateEnv() {
