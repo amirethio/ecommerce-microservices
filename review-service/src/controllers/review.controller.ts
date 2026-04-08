@@ -3,16 +3,15 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { AppError } from "../utils/appError.js";
 import axios from "axios";
-
-const Url = process.env.SERVICE_URL || "http://localhost";
+import { ProductServiceClient } from "./../services/clients/product.service.client.js";
+import { OrderServiceClient } from "./../services/clients/order.service.client.js";
 const GATEWAY_SECRET = process.env.GATEWAY_SECRET || "super-secret-gateway-key";
+const Url = process.env.SERVICE_URL || "http://localhost";
 
-const instance = axios.create({
-  baseURL: Url,
-  timeout: 5000,
-  headers: { "x-gateway-secret": GATEWAY_SECRET },
-});
+// initailzing client services
+const OrderService = new OrderServiceClient(`${Url}:3004`);
 
+const ProductService = new ProductServiceClient(`${Url}:3002`);
 // Validation schemas
 const createReviewSchema = z.object({
   productId: z.string().uuid(),
@@ -35,26 +34,29 @@ export const createReview = async (
     // Validate request body
     const validatedData = createReviewSchema.parse(req.body);
     const userId = req.user!.id;
+    
 
     //? check if the product exists
-    const product = await instance.get(
-      `:3002/products/${validatedData.productId} `,
+    const product = await ProductService.getProductById(
+      validatedData.productId,
     );
-    if (!product.data) {
+    if (!product) {
       return next(new AppError("Product not found", 404));
-    }
+    }    
 
     // Check if user has purchased the product
-    // get all order of user and check if the product exist
-
-    const hasPurchased = await instance.get(
-      `:3004/orders/purchased/${validatedData.productId}`,
+    const hasPurchased = await OrderService.CheckPurchased(
+      validatedData.productId,
     );
-    if (!hasPurchased.data) {
+    if (hasPurchased !== 200) {
       return next(
         new AppError("You can only review products you have purchased", 403),
       );
     }
+
+    console.log("step 3: user has purchased the product ");
+    console.log(hasPurchased);
+    
 
     // Check if user has already reviewed this product
     const existingReview = await prisma.review.findFirst({
@@ -66,6 +68,9 @@ export const createReview = async (
     if (existingReview) {
       return next(new AppError("You have already reviewed this product", 409));
     }
+
+    console.log("step 4:checking if u review this product before");
+    
 
     // Create review
     const review = await prisma.review.create({
@@ -94,15 +99,14 @@ export const createReview = async (
     const avgRating = totalRating / productReviews.length;
 
     // update product with new rating
-
-    const response = await instance.patch(
-      `:3002/products/${validatedData.productId}`,
+    const response = ProductService.updateProductReview(
+      validatedData.productId,
       {
         avgRating,
         ratingCount: productReviews.length,
       },
     );
-    if (!response.data) {
+    if (!response) {
       return next(new AppError("Failed to update product rating", 500));
     }
 

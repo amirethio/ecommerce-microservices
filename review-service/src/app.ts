@@ -41,19 +41,9 @@ app.get("/health", (req, res) => {
 });
 
 //ROUTES
+app.use("/", reviewRoutes);
 
-app.use("/api/reviews", reviewRoutes)
-
-//404 HANDLER
-
-app.use((req, res) => {
-  res.status(404).json({
-    message: "Route not found",
-  });
-});
-
-//GLOBAL ERROR HANDLER
-
-app.use(errorHandler)
+//GLOBAL ERROR HANDLERd
+app.use(errorHandler);
 
 export default app;
