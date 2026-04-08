@@ -47,6 +47,13 @@ interface Order {
   updatedAt: string;
 }
 
+type OrderParams = {
+  startDate?: Date;
+  endDate?: Date;
+  statuses?: string[];
+  includeProducts?: boolean;
+};
+
 export class OrderServiceClient {
   private client: AxiosInstance;
 
@@ -61,12 +68,7 @@ export class OrderServiceClient {
     });
   }
 
-  async getOrders(params: {
-    startDate?: Date;
-    endDate?: Date;
-    statuses?: string[];
-    includeProducts?: boolean;
-  }): Promise<Order[]> {
+  async getOrders(params: OrderParams): Promise<Order[]> {
     const response = await this.client.get("/", { params });
     const orders = response.data as Order[];
 
@@ -126,8 +128,11 @@ export class OrderServiceClient {
     return response.data.count;
   }
 
-
-  async CheckPurchased(productId: string): Promise<number> {
+  async CheckPurchased(
+    productId: string,
+    BearerToken: string,
+  ): Promise<number> {
+    this.client.defaults.headers.common["Authorization"] = BearerToken;
     const ressponse = await this.client.get(`/purchased/${productId}`);
     return ressponse.status;
   }

@@ -29,8 +29,6 @@ export const protect = async (
     // Get token from header
     const authHeader = req.headers.authorization;
     let token;
-    console.log(authHeader);
-    
 
     if (authHeader && authHeader.startsWith("Bearer")) {
       token = authHeader.split(" ")[1];

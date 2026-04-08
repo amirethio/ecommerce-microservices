@@ -34,7 +34,6 @@ export const createReview = async (
     // Validate request body
     const validatedData = createReviewSchema.parse(req.body);
     const userId = req.user!.id;
-    
 
     //? check if the product exists
     const product = await ProductService.getProductById(
@@ -42,11 +41,12 @@ export const createReview = async (
     );
     if (!product) {
       return next(new AppError("Product not found", 404));
-    }    
-
+    }
+    const BearerToken = req.headers.authorization;
     // Check if user has purchased the product
     const hasPurchased = await OrderService.CheckPurchased(
       validatedData.productId,
+      BearerToken,
     );
     if (hasPurchased !== 200) {
       return next(
@@ -56,7 +56,6 @@ export const createReview = async (
 
     console.log("step 3: user has purchased the product ");
     console.log(hasPurchased);
-    
 
     // Check if user has already reviewed this product
     const existingReview = await prisma.review.findFirst({
@@ -70,7 +69,6 @@ export const createReview = async (
     }
 
     console.log("step 4:checking if u review this product before");
-    
 
     // Create review
     const review = await prisma.review.create({
