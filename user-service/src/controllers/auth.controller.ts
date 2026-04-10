@@ -40,7 +40,7 @@ const generateAccessToken = (user: {
     user,
     process.env.JWT_ACCESS_SECRET as string,
     {
-      expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || "1d", // Default to "1d" if undefined
+      expiresIn: "1d", // Default to "1d" if undefined
     } as jwt.SignOptions,
   );
 };
@@ -58,7 +58,6 @@ const generateRefreshToken = (user: {
     } as jwt.SignOptions,
   );
 };
-
 
 // Register a new user
 export const register = async (
@@ -377,7 +376,6 @@ export const forgotPassword = async (
       },
     });
 
-    
     // Send email with reset code
     await sendEmail({
       to: user.email,
@@ -454,6 +452,39 @@ export const resetPassword = async (
     if (error instanceof z.ZodError) {
       return next(new AppError("Validation error", 400, error.format()));
     }
+    next(error);
+  }
+};
+
+export const getUsersByIds = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids)) {
+      return next(
+        new AppError("Invalid input", 400),
+      );
+    }
+
+    const users = await prisma.user.findMany({
+      where: {
+        id: {
+          in: ids,
+        },
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        
+      },
+    });
+
+    res.status(200).json(users);
+  } catch (error) {
     next(error);
   }
 };

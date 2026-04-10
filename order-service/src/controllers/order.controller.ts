@@ -49,7 +49,9 @@ export const createOrder = async (
       return next(new AppError("Some products were not found", 404));
     }
 
-    const productMap = new Map(products.map((product) => [product.id, product]));
+    const productMap = new Map(
+      products.map((product) => [product.id, product]),
+    );
 
     const orderItems = items.map((item) => {
       const product = productMap.get(item.productId);
@@ -281,4 +283,25 @@ export const getAllOrders = async (
   } catch (error) {
     next(error);
   }
+};
+
+export const checkPurchased = async (req: Request, res: Response) => {
+  const userId = req.user;
+  const ProductId = req.params.productId;
+  console.log("now its inside puchased");
+
+  try {
+    const purchased = prisma.order.findMany({
+      where: {
+        id: userId,
+        OrderItem: {
+          ProductId: ProductId,
+        },
+      },
+    });
+    res.status(200).json({
+      status: "sucess",
+      data: purchased,
+    });
+  } catch (error) {}
 };

@@ -73,12 +73,25 @@ export class ProductServiceClient {
   async updateProductReview(
     productId: string,
     newReview: {
-      avgRating?: number;
+      avgRating?: number | null;
       ratingCount: number;
     },
+    BearerToken: string,
   ) {
-    const response = await this.client.patch("/review", {
-      newReview,
+    this.client.defaults.headers.common["Authorization"] = BearerToken;
+    const response = await this.client.patch(`/review/${productId}`, {
+      avgRating: newReview.avgRating,
+      ratingCount: newReview.ratingCount,
+    });
+    return response.data;
+  }
+  async getAllReviewsOfProduct(
+    BearerToken: string,
+    prosductIds: string[],
+  ): Promise<Product[]> {
+    this.client.defaults.headers.common["Authorization"] = BearerToken;
+    const response = await this.client.post(`batch`, {
+      ids: prosductIds,
     });
     return response.data;
   }

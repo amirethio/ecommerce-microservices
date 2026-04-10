@@ -7,6 +7,8 @@ import {
   deleteProduct,
   createCategory,
   getCategories,
+  updateProductReview,
+  getProductsBatchInternal,
 } from "../controllers/product.controller.js";
 import { protect, restrictTo } from "../middlewares/auth.middleware.js";
 
@@ -257,5 +259,13 @@ router.patch("/:id", protect, restrictTo("ADMIN"), updateProduct);
  *         description: Product not found
  */
 router.delete("/:id", protect, restrictTo("ADMIN"), deleteProduct);
+
+router.patch("/review/:productId" ,  protect , updateProductReview)
+
+router.post("/batch",protect, getProductsBatchInternal);
+
+
+router.get("/review/:productId", protect, getProduct); 
+
 
 export default router;

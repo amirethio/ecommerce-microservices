@@ -13,6 +13,7 @@ export const errorHandler = (
   next: NextFunction,
 ) => {
   logger.error(err);
+  console.log(err);
 
   // Default error
   let statusCode = 500;

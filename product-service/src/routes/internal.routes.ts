@@ -7,7 +7,6 @@ import {
 
 const router: express.Router = express.Router();
 
-router.post("/products/batch", getProductsBatchInternal);
 router.patch("/products/stock/decrement", decrementStockInternal);
 router.patch("/products/stock/increment", incrementStockInternal);
 

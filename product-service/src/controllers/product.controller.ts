@@ -37,6 +37,10 @@ const productFilterSchema = z.object({
   limit: z.string().transform(Number).default(10),
 });
 
+const newReview = z.object({
+  avgRating: z.number().nonnegative().nullable(),
+  ratingCount: z.number().nonnegative().nullable(),
+});
 // Create a new category
 export const createCategory = async (
   req: Request,
@@ -220,20 +224,18 @@ export const getProducts = async (
     const skip = (page - 1) * limit;
 
     // Get products with pagination
-  const [products, totalCount] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { createdAt: "desc" },
-      include: {
-        category: true,
-      },
-    }),
-    prisma.product.count({ where }),
-  ]);
-
-
+    const [products, totalCount] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        include: {
+          category: true,
+        },
+      }),
+      prisma.product.count({ where }),
+    ]);
 
     // Calculate pagination metadata
     const totalPages = Math.ceil(totalCount / limit);
@@ -269,7 +271,6 @@ export const getProduct = async (
   next: NextFunction,
 ) => {
   try {
-  
     const idOrSlug = req.params.idOrSlug as string;
 
     // Check if parameter is UUID or slug
@@ -309,7 +310,7 @@ export const updateProduct = async (
   next: NextFunction,
 ) => {
   try {
-    const id= req.params.id as string;
+    const id = req.params.id as string;
 
     // Validate request body
     const validatedData = updateProductSchema.parse(req.body);
@@ -383,7 +384,7 @@ export const deleteProduct = async (
   next: NextFunction,
 ) => {
   try {
-    const id= req.params.id as string;
+    const id = req.params.id as string;
 
     // Check if product exists
     const product = await prisma.product.findUnique({
@@ -539,7 +540,38 @@ export const incrementStockInternal = async (
     if (error instanceof z.ZodError) {
       return next(new AppError("Validation error", 400, error.format()));
     }
+    next(error);
+  }
+};
 
+export const updateProductReview = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const productId = req.params.id as string;
+    console.log(req.body);
+
+    const newData = newReview.parse(req.body);
+    const product = prisma.product.update({
+      where: { id: productId },
+      data: {
+        avgRating: newData.avgRating,
+        ratingCount: newData.ratingCount,
+      },
+    });
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        product,
+      },
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return next(new AppError("Validation error", 400, error.format()));
+    }
     next(error);
   }
 };

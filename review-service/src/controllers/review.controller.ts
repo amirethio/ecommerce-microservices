@@ -5,13 +5,15 @@ import { AppError } from "../utils/appError.js";
 import axios from "axios";
 import { ProductServiceClient } from "./../services/clients/product.service.client.js";
 import { OrderServiceClient } from "./../services/clients/order.service.client.js";
+import { UserServiceClient } from "../services/clients/user.service.client.js";
+
 const GATEWAY_SECRET = process.env.GATEWAY_SECRET || "super-secret-gateway-key";
 const Url = process.env.SERVICE_URL || "http://localhost";
 
 // initailzing client services
 const OrderService = new OrderServiceClient(`${Url}:3004`);
-
 const ProductService = new ProductServiceClient(`${Url}:3002`);
+const UserService = new UserServiceClient(`${Url}:3001`);
 // Validation schemas
 const createReviewSchema = z.object({
   productId: z.string().uuid(),
@@ -42,7 +44,7 @@ export const createReview = async (
     if (!product) {
       return next(new AppError("Product not found", 404));
     }
-    const BearerToken = req.headers.authorization;
+    const BearerToken = req.headers.authorization as string;
     // Check if user has purchased the product
     const hasPurchased = await OrderService.CheckPurchased(
       validatedData.productId,
@@ -54,9 +56,6 @@ export const createReview = async (
       );
     }
 
-    console.log("step 3: user has purchased the product ");
-    console.log(hasPurchased);
-
     // Check if user has already reviewed this product
     const existingReview = await prisma.review.findFirst({
       where: {
@@ -64,11 +63,10 @@ export const createReview = async (
         productId: validatedData.productId,
       },
     });
+
     if (existingReview) {
       return next(new AppError("You have already reviewed this product", 409));
     }
-
-    console.log("step 4:checking if u review this product before");
 
     // Create review
     const review = await prisma.review.create({
@@ -103,6 +101,7 @@ export const createReview = async (
         avgRating,
         ratingCount: productReviews.length,
       },
+      BearerToken,
     );
     if (!response) {
       return next(new AppError("Failed to update product rating", 500));
@@ -130,6 +129,7 @@ export const updateReview = async (
 ) => {
   try {
     const { id } = req.params as { id: string };
+    const BearerToken = req.headers.authorization as string;
 
     const validatedData = updateReviewSchema.parse(req.body);
     const userId = req.user!.id;
@@ -166,13 +166,15 @@ export const updateReview = async (
       const avgRating = totalRating / productReviews.length;
       // add the updated avgRating
 
-      const response = await instance.patch(
-        `:3002/products/${review.productId}`,
+      const response = await ProductService.updateProductReview(
+        review.productId,
         {
           avgRating,
           ratingCount: productReviews.length,
         },
+        BearerToken,
       );
+
       if (!response.data) {
         return next(new AppError("Failed to update product rating", 500));
       }
@@ -202,8 +204,9 @@ export const deleteReview = async (
     const { id } = req.params as { id: string };
     const userId = req.user!.id;
     const isAdmin = req.user!.role === "ADMIN";
-
+    const BearerToken = req.headers.authorization as string;
     // Check if review exists
+
     const review = await prisma.review.findUnique({
       where: { id },
     });
@@ -234,30 +237,35 @@ export const deleteReview = async (
         0,
       );
       const avgRating = totalRating / productReviews.length;
-
-      const response = await instance.patch(
-        `:3002/products/${review.productId}`,
+      const response = await ProductService.updateProductReview(
+        review.productId,
         {
           avgRating,
           ratingCount: productReviews.length,
         },
+        BearerToken,
       );
+
       if (!response.data) {
         return next(new AppError("Failed to update product rating", 500));
       }
     } else {
-      const response = await instance.patch(
-        `:3002/products/${review.productId}`,
+      const response = ProductService.updateProductReview(
+        review.productId,
         {
           avgRating: null,
           ratingCount: 0,
         },
+        BearerToken,
       );
-      if (!response.data) {
+
+      if (!response) {
         return next(new AppError("Failed to update product rating", 500));
       }
     }
-    res.status(204).send();
+    res.status(204).json({
+      status: "success",
+    });
   } catch (error) {
     next(error);
   }
@@ -274,11 +282,12 @@ export const getProductReviews = async (
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+    const BearerToken = req.headers.authorization as string;
 
     // Check if product exists
+    const product = await ProductService.getProductById(productId);
 
-    const product = await instance.get(`:3002/products/${productId}`);
-    if (!product.data) {
+    if (!product) {
       return next(new AppError("Product not found", 404));
     }
 
@@ -298,14 +307,15 @@ export const getProductReviews = async (
     // find user id and get info from user service
     const UserIds = [...new Set(reviews.map((review) => review.userId))];
 
-    const userResponse = await instance.post(":3001/users/batch", {
-      ids: UserIds,
-    });
-    if (!userResponse.data) {
+    const user = await UserService.getUsersByIds(UserIds, BearerToken);
+
+    // const userResponse = await instance.post(":3001/users/batch", {
+    //   ids: UserIds,
+    // });
+    if (!user) {
       return next(new AppError("Failed to fetch user data", 500));
     }
 
-    const user = userResponse.data;
     // mapping user info to reviews
     const reviewsWithUser = reviews.map((review) => {
       const userInfo = user.find(
@@ -344,10 +354,11 @@ export const getUserReviews = async (
   next: NextFunction,
 ) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.body.userId;
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+    const BearerToken = req.headers.authorization as string;
 
     // Get reviews with pagination
     const [reviews, totalCount] = await Promise.all([
@@ -362,14 +373,15 @@ export const getUserReviews = async (
 
     const ProductIds = [...new Set(reviews.map((review) => review.productId))];
 
-    const productResponse = await instance.post(":3002/products/batch", {
-      ids: ProductIds,
-    });
-    if (!productResponse.data) {
+    const products = await ProductService.getAllReviewsOfProduct(
+      BearerToken,
+      ProductIds,
+    );
+
+    if (!products) {
       return next(new AppError("Failed to fetch product data", 500));
     }
 
-    const products = productResponse.data;
     // mapping product info to reviews
     const reviewsWithProducts = reviews.map((review) => {
       const productInfo = products.find(
