@@ -194,5 +194,5 @@ router.post("/forgot-password", forgotPassword);
 
 router.post("/reset-password", resetPassword);
 
-router.post("/users/batch", protect, getUsersByIds);
+router.post("/batch", protect, getUsersByIds);
 export default router;

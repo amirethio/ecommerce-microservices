@@ -288,7 +288,6 @@ export const getAllOrders = async (
 export const checkPurchased = async (req: Request, res: Response) => {
   const userId = req.user;
   const ProductId = req.params.productId;
-  console.log("now its inside puchased");
 
   try {
     const purchased = prisma.order.findMany({

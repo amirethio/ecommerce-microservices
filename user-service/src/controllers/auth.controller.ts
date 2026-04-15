@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { z } from "zod";
+import { array, z } from "zod";
 import jwt from "jsonwebtoken";
 import argon2 from "argon2";
 import crypto from "crypto";
@@ -456,35 +456,36 @@ export const resetPassword = async (
   }
 };
 
+const internalIds = z.object({
+  ids: z.array(z.string()),
+});
+
 export const getUsersByIds = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const { ids } = req.body;
-    if (!Array.isArray(ids)) {
-      return next(
-        new AppError("Invalid input", 400),
-      );
-    }
+    const validatedIds = internalIds.parse(req.body);
 
     const users = await prisma.user.findMany({
       where: {
         id: {
-          in: ids,
+          in: validatedIds.ids,
         },
       },
       select: {
         id: true,
         firstName: true,
         lastName: true,
-        
       },
     });
 
     res.status(200).json(users);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return next(new AppError("Validation error", 400, error.format()));
+    }
     next(error);
   }
 };

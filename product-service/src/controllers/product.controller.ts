@@ -39,7 +39,7 @@ const productFilterSchema = z.object({
 
 const newReview = z.object({
   avgRating: z.number().nonnegative().nullable(),
-  ratingCount: z.number().nonnegative().nullable(),
+  ratingCount: z.number().nonnegative(),
 });
 // Create a new category
 export const createCategory = async (
@@ -407,7 +407,7 @@ export const deleteProduct = async (
 };
 
 const internalBatchSchema = z.object({
-  productIds: z.array(z.string().uuid()).min(1),
+  ids: z.array(z.string()),
 });
 
 const internalStockSchema = z.object({
@@ -427,11 +427,11 @@ export const getProductsBatchInternal = async (
   next: NextFunction,
 ) => {
   try {
-    const { productIds } = internalBatchSchema.parse(req.body);
+    const validatedProductIds = internalBatchSchema.parse(req.body);
 
     const products = await prisma.product.findMany({
       where: {
-        id: { in: productIds },
+        id: { in: validatedProductIds.ids },
       },
       select: {
         id: true,
@@ -444,7 +444,7 @@ export const getProductsBatchInternal = async (
 
     res.status(200).json({
       status: "success",
-      data: { products },
+      data: products,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -551,7 +551,6 @@ export const updateProductReview = async (
 ) => {
   try {
     const productId = req.params.id as string;
-    console.log(req.body);
 
     const newData = newReview.parse(req.body);
     const product = prisma.product.update({

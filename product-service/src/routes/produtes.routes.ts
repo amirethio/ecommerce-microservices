@@ -265,7 +265,4 @@ router.patch("/review/:productId" ,  protect , updateProductReview)
 router.post("/batch",protect, getProductsBatchInternal);
 
 
-router.get("/review/:productId", protect, getProduct); 
-
-
 export default router;
