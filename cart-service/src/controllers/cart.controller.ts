@@ -41,46 +41,21 @@ export const getCart = async (
     let cart = await prisma.cart.findUnique({
       where: { userId },
       include: {
-        items: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                price: true,
-                images: true,
-                stock: true,
-              },
-            },
-          },
-        },
+        items: true,
       },
     });
-
     if (!cart) {
       cart = await prisma.cart.create({
         data: { userId },
         include: {
-          items: {
-            include: {
-              product: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
-                  price: true,
-                  images: true,
-                  stock: true,
-                },
-              },
-            },
-          },
+          items: true,
         },
       });
     }
 
-    const total = calculateTotal(cart.items);
+    const total = cart!.items.reduce((sum, item) => {
+      return sum + Number(item.price) * item.quantity;
+    }, 0);
 
     res.status(200).json({
       status: "success",
@@ -220,27 +195,28 @@ export const updateCartItem = async (
     if (!cart) {
       return next(new AppError("Cart not found", 404));
     }
-
     const cartItem = await prisma.cartItem.findFirst({
       where: {
         id: itemId,
         cartId: cart.id,
-      },
-      include: {
-        product: true,
-      },
+      } as { id: string; cartId: string },
     });
 
     if (!cartItem) {
       return next(new AppError("Cart item not found", 404));
     }
+    // call the product here
 
-    if (cartItem.product.stock < validatedData.quantity) {
+    const product = await ProductService.getProductById(cartItem.productId);
+    if (!product) {
+      return next(new AppError("product not found", 404));
+    }
+    if (product.stock < validatedData.quantity) {
       return next(new AppError("Not enough stock available", 400));
     }
 
     await prisma.cartItem.update({
-      where: { id: itemId },
+      where: { id: itemId } as { id: string },
       data: {
         quantity: validatedData.quantity,
       },
@@ -249,20 +225,7 @@ export const updateCartItem = async (
     const updatedCart = await prisma.cart.findUnique({
       where: { id: cart.id },
       include: {
-        items: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                price: true,
-                images: true,
-                stock: true,
-              },
-            },
-          },
-        },
+        items: true,
       },
     });
 
@@ -270,8 +233,9 @@ export const updateCartItem = async (
       return next(new AppError("Cart not found", 404));
     }
 
-    const total = calculateTotal(updatedCart.items);
-
+    const total = updatedCart!.items.reduce((sum, item) => {
+      return sum + Number(item.price) * item.quantity;
+    }, 0);
     res.status(200).json({
       status: "success",
       data: {
@@ -311,7 +275,7 @@ export const removeFromCart = async (
       where: {
         id: itemId,
         cartId: cart.id,
-      },
+      } as { id: string; cartId: string },
     });
 
     if (!cartItem) {
@@ -319,34 +283,21 @@ export const removeFromCart = async (
     }
 
     await prisma.cartItem.delete({
-      where: { id: itemId },
+      where: { id: itemId } as { id: string },
     });
 
     const updatedCart = await prisma.cart.findUnique({
       where: { id: cart.id },
-      include: {
-        items: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                price: true,
-                images: true,
-                stock: true,
-              },
-            },
-          },
-        },
-      },
+      include: { items: true },
     });
 
     if (!updatedCart) {
       return next(new AppError("Cart not found", 404));
     }
 
-    const total = calculateTotal(updatedCart.items);
+    const total = updatedCart!.items.reduce((sum, item) => {
+      return sum + Number(item.price) * item.quantity;
+    }, 0);
 
     res.status(200).json({
       status: "success",
