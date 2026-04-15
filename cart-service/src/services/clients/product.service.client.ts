@@ -43,30 +43,4 @@ export class ProductServiceClient {
     return response.data.data.product;
   }
 
-  // async updateProductReview(
-  //   productId: string,
-  //   newReview: {
-  //     avgRating?: number | null;
-  //     ratingCount: number;
-  //   },
-  //   BearerToken: string,
-  // ) {
-  //   this.client.defaults.headers.common["Authorization"] = BearerToken;
-  //   const response = await this.client.patch(`/review/${productId}`, {
-  //     avgRating: newReview.avgRating,
-  //     ratingCount: newReview.ratingCount,
-  //   });
-  //   return response.data;
-  // }
-  // async getProductForReview(
-  //   productIds: string[],
-  //   BearerToken: string,
-  // ): Promise<productRes> {
-  //   this.client.defaults.headers.common["Authorization"] = BearerToken;
-  //   const response = await this.client.post(`/batch`, {
-  //     ids: productIds,
-  //   });
-
-  //   return response.data;
-  // }
 }

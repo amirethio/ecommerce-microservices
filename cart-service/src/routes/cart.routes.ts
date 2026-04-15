@@ -106,6 +106,24 @@ router.patch("/:itemId", updateCartItem);
 
 /**
  * @swagger
+ * /cart/clear:
+ *   delete:
+ *     summary: Clear cart
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Cart cleared successfully
+ *       401:
+ *         description: Not authenticated
+ *       404:
+ *         description: Cart not found
+ */
+router.delete("/clear", clearCart);
+
+/**
+ * @swagger
  * /cart/{itemId}:
  *   delete:
  *     summary: Remove  updateCartItem)
@@ -135,22 +153,6 @@ router.patch("/:itemId", updateCartItem);
  */
 router.delete("/:itemId", removeFromCart);
 
-/**
- * @swagger
- * /cart/clear:
- *   delete:
- *     summary: Clear cart
- *     tags: [Cart]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Cart cleared successfully
- *       401:
- *         description: Not authenticated
- *       404:
- *         description: Cart not found
- */
-router.delete("/clear", clearCart);
+
 
 export { router as cartRoutes };
