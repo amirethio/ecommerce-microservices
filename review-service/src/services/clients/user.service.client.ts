@@ -19,22 +19,12 @@ export class UserServiceClient {
   ): Promise<{ id: string; name: string }[]> {
     this.client.defaults.headers.common["Authorization"] = BearerToken;
 
-    const response = await this.client.post("/users/batch", {
+
+    const response = await this.client.post("/batch", {
       ids: userIds,
     });
     return response.data;
   }
 
-  //   async getReviewsByProducts(params: {
-  //     productIds: string[];
-  //     startDate?: Date;
-  //     endDate?: Date;
-  //   }): Promise<Review[]> {
-  //     const response = await this.client.post("/reviews/by-products", {
-  //       productIds: params.productIds,
-  //       startDate: params.startDate?.toISOString(),
-  //       endDate: params.endDate?.toISOString(),
-  //     });
-  //     return response.data;
-  //   }
+
 }

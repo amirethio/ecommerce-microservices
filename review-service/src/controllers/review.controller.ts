@@ -323,6 +323,8 @@ export const getProductReviews = async (
       );
       return { ...review, user: userInfo };
     });
+
+
     // Calculate pagination metadata
     const totalPages = Math.ceil(totalCount / limit);
     const hasNextPage = page < totalPages;
@@ -354,11 +356,11 @@ export const getUserReviews = async (
   next: NextFunction,
 ) => {
   try {
-    const userId = req.body.userId;
+    const userId = req.user!.id;
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    const BearerToken = req.headers.authorization as string;
+    const BearerToken = req.headers["authorization"] as string;
 
     // Get reviews with pagination
     const [reviews, totalCount] = await Promise.all([
@@ -373,14 +375,15 @@ export const getUserReviews = async (
 
     const ProductIds = [...new Set(reviews.map((review) => review.productId))];
 
-    const products = await ProductService.getAllReviewsOfProduct(
-      BearerToken,
+    const productsResponse = await ProductService.getProductForReview(
       ProductIds,
+      BearerToken,
     );
 
-    if (!products) {
+    if (!productsResponse) {
       return next(new AppError("Failed to fetch product data", 500));
     }
+    const products = productsResponse.data;
 
     // mapping product info to reviews
     const reviewsWithProducts = reviews.map((review) => {

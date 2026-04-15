@@ -19,13 +19,9 @@ interface Product {
   updatedAt?: string;
 }
 
-interface Review {
-  id: string;
-  userId: string;
-  productId: string;
-  rating: number;
-  comment: string;
-  createdAt: string;
+interface productRes {
+  status: string;
+  data: Product[];
 }
 
 export class ProductServiceClient {
@@ -42,31 +38,8 @@ export class ProductServiceClient {
     });
   }
 
-  async getReviewsByProducts(params: {
-    productIds: string[];
-    startDate?: Date;
-    endDate?: Date;
-  }): Promise<Review[]> {
-    const response = await this.client.post("/reviews/by-products", {
-      productIds: params.productIds,
-      startDate: params.startDate?.toISOString(),
-      endDate: params.endDate?.toISOString(),
-    });
-    return response.data;
-  }
-
   async getProductById(productId: string): Promise<Product | null> {
     const response = await this.client.get(`/${productId}`);
-    return response.data;
-  }
-
-  async getProducts(params?: {
-    categoryId?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    inStock?: boolean;
-  }): Promise<Product[]> {
-    const response = await this.client.get("", { params });
     return response.data;
   }
 
@@ -85,14 +58,15 @@ export class ProductServiceClient {
     });
     return response.data;
   }
-  async getAllReviewsOfProduct(
+  async getProductForReview(
+    productIds: string[],
     BearerToken: string,
-    prosductIds: string[],
-  ): Promise<Product[]> {
+  ): Promise<productRes> {
     this.client.defaults.headers.common["Authorization"] = BearerToken;
-    const response = await this.client.post(`batch`, {
-      ids: prosductIds,
+    const response = await this.client.post(`/batch`, {
+      ids: productIds,
     });
+
     return response.data;
   }
 }
