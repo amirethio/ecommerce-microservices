@@ -7,9 +7,10 @@ import {
   logout,
   forgotPassword,
   resetPassword,
+  getUsersByIds,
 } from "../controllers/auth.controller.js";
-  const router: express.Router = express.Router();
-
+const router: express.Router = express.Router();
+import { protect } from "../middlewares/auth.middleware.js";
 /**
  *
  * @swagger
@@ -193,4 +194,5 @@ router.post("/forgot-password", forgotPassword);
 
 router.post("/reset-password", resetPassword);
 
+router.post("/batch", protect, getUsersByIds);
 export default router;

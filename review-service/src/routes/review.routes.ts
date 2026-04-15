@@ -2,11 +2,11 @@ import express from "express";
 import {
   createReview,
   updateReview,
-  // deleteReview,
+  deleteReview,
   getProductReviews,
-  //   getUserReviews,
+    getUserReviews,
 } from "../controllers/review.controller";
-import { protect } from "../middlewares/auth.middleware";   
+import { protect } from "../middlewares/auth.middleware";
 const router: express.Router = express.Router();
 
 /**
@@ -117,7 +117,7 @@ router.patch("/:id", protect, updateReview);
  *       404:
  *         description: Review not found
  */
-// router.delete("/:id", protect, deleteReview);
+router.delete("/:id", protect, deleteReview);
 
 /**
  * @swagger
@@ -151,10 +151,9 @@ router.patch("/:id", protect, updateReview);
 router.get("/:productId", getProductReviews);
 
 /**
- * @swagger
- * /reviews/user:
+ * @swagger * /reviews/user:
  *   get:
- *     summary: Get user's reviews
+ *     summary: Get reviews by the current user
  *     tags: [Reviews]
  *     security:
  *       - bearerAuth: []
@@ -175,6 +174,6 @@ router.get("/:productId", getProductReviews);
  *       401:
  *         description: Not authenticated
  */
-// router.get("/user", protect, getUserReviews);
+router.post("/user", protect, getUserReviews);
 
 export default router;

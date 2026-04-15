@@ -1,6 +1,11 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 import { AppError } from "../utils/appError.js";
+
+// Load env from service dir first, then monorepo root as fallback.
+dotenv.config();
+dotenv.config({ path: "../.env" });
 
 // Extend Express Request interface to include user
 declare global {
@@ -30,17 +35,33 @@ export const protect = async (
     }
 
     if (!token) {
-      console.log("this is wrong");
-
       return next(new AppError("Not authenticated. Please log in", 401));
     }
 
+    const jwtSecret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      return next(new AppError("Server auth configuration is missing JWT secret", 500));
+    }
+
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET!) as {
+    const decoded = jwt.verify(token, jwtSecret) as {
       id: string;
       email: string;
       role: string;
     };
+
+
+
+    // Check if user exists
+    //? we will remove below code since we will  we get the user id  and role from the decode we will use that below and if the user already logedout the token expires soon
+
+    // const user = await prisma.user.findUnique({
+    //   where: { id: decoded.id },
+    // });
+
+    // if (!user) {
+    //   return next(new AppError("User no longer exists", 401));
+    // }
 
     // Set user in request
     req.user = {
@@ -50,6 +71,7 @@ export const protect = async (
     };
 
     next();
+
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
       return next(new AppError("Invalid token. Please log in again", 401));
@@ -62,6 +84,7 @@ export const protect = async (
 };
 
 export const restrictTo = (...roles: string[]) => {
+  
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return next(new AppError("Not authenticated. Please log in", 401));

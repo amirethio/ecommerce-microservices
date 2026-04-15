@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { z } from "zod";
+import { array, z } from "zod";
 import jwt from "jsonwebtoken";
 import argon2 from "argon2";
 import crypto from "crypto";
@@ -40,7 +40,7 @@ const generateAccessToken = (user: {
     user,
     process.env.JWT_ACCESS_SECRET as string,
     {
-      expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || "1d", // Default to "1d" if undefined
+      expiresIn: "1d", // Default to "1d" if undefined
     } as jwt.SignOptions,
   );
 };
@@ -58,7 +58,6 @@ const generateRefreshToken = (user: {
     } as jwt.SignOptions,
   );
 };
-
 
 // Register a new user
 export const register = async (
@@ -377,7 +376,6 @@ export const forgotPassword = async (
       },
     });
 
-    
     // Send email with reset code
     await sendEmail({
       to: user.email,
@@ -450,6 +448,40 @@ export const resetPassword = async (
       status: "success",
       message: "Password reset successfully",
     });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return next(new AppError("Validation error", 400, error.format()));
+    }
+    next(error);
+  }
+};
+
+const internalIds = z.object({
+  ids: z.array(z.string()),
+});
+
+export const getUsersByIds = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const validatedIds = internalIds.parse(req.body);
+
+    const users = await prisma.user.findMany({
+      where: {
+        id: {
+          in: validatedIds.ids,
+        },
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+      },
+    });
+
+    res.status(200).json(users);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return next(new AppError("Validation error", 400, error.format()));

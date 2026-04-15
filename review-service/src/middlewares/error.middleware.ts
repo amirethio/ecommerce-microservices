@@ -4,7 +4,7 @@ import { AppError } from "../utils/appError.js";
 import {
   PrismaClientKnownRequestError,
   PrismaClientValidationError,
-} from "@prisma/client/runtime/library";
+} from "@prisma/client/runtime/client";
 
 export const errorHandler = (
   err: Error,
@@ -12,13 +12,8 @@ export const errorHandler = (
   res: Response,
   next: NextFunction,
 ) => {
-  logger.error("Request failed", {
-    method: req.method,
-    path: req.originalUrl,
-    name: err.name,
-    message: err.message,
-    stack: err.stack,
-  });
+  logger.error(err);
+  console.log(err);
 
   // Default error
   let statusCode = 500;

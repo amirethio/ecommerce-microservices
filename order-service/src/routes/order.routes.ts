@@ -1,10 +1,11 @@
 import express from "express";
 import {
-	createOrder,
-	getAllOrders,
-	getOrder,
-	getUserOrders,
-	updateOrderStatus,
+  createOrder,
+  getAllOrders,
+  getOrder,
+  getUserOrders,
+  updateOrderStatus,
+  checkPurchased,
 } from "../controllers/order.controller.js";
 import { protect, restrictTo } from "../middlewares/auth.middleware.js";
 
@@ -12,7 +13,8 @@ const router: express.Router = express.Router();
 
 router.use(protect);
 
-/**
+/**console.log("all done products found returning ");
+ * 
  * @swagger
  * /orders:
  *   post:
@@ -57,4 +59,6 @@ router.get("/:id", getOrder);
  */
 router.patch("/:id/status", restrictTo("ADMIN"), updateOrderStatus);
 
+// check purchased 
+router.get("/purchased/:productId" , protect , checkPurchased);
 export { router as orderRoutes };
