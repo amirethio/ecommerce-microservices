@@ -2,29 +2,26 @@ import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
-import { AppError } from "../utils/appError";
-import { generatePresignedUrl, getPublicUrl } from "../utils/minio";
-import prisma from "../config/db";
+import { AppError } from "../utils/appError.js";
+import { generatePresignedUrl, getPublicUrl } from "../utils/minio.js";
+import { prisma } from "../lib/prisma.js";
 
 const uploadRequestSchema = z.object({
   fileName: z.string(),
-  fileType: z
-    .string()
-    .refine(
-      (val) => {
-        const allowedTypes = [
-          "image/jpeg",
-          "image/png",
-          "image/webp",
-          "image/gif",
-        ];
-        return allowedTypes.includes(val);
-      },
-      {
-        message:
-          "File type not supported. Allowed types: jpeg, png, webp, gif",
-      },
-    ),
+  fileType: z.string().refine(
+    (val) => {
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+      ];
+      return allowedTypes.includes(val);
+    },
+    {
+      message: "File type not supported. Allowed types: jpeg, png, webp, gif",
+    },
+  ),
 });
 
 export const getUploadUrl = async (
