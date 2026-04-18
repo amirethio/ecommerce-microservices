@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import { cartRoutes } from "./routes/cart.routes";
+import { cartRoutes } from "./routes/cart.routes.js";
 
 const app = express();
 
