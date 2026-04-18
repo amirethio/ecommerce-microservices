@@ -1,4 +1,4 @@
-FROM node:22-alpine
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -6,10 +6,10 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install pnpm globally
-RUN npm install -g pnpm
+
 
 # Install dependencies
-RUN pnpm install
+RUN npm install 
 
 # Copy the rest of the application
 COPY . .
@@ -18,10 +18,25 @@ COPY . .
 RUN npx prisma generate
 
 # Build the application
-RUN pnpm build
+RUN npm run build
 
-# Expose the port
-EXPOSE 3000
 
-# Start the application with seed then production start
-CMD sh -c "pnpm prisma:migrate && pnpm seed && pnpm start:prod"
+
+# Stage 2: Production
+FROM node:22-alpine AS production
+WORKDIR /app
+
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/generated ./generated
+# Copy the config to production stage
+COPY --from=builder /app/prisma.config.ts ./ 
+
+EXPOSE 3001
+
+# Use npx to ensure the CLI can read the .ts config if needed, 
+# but rely on ENV vars for the URL
+# CMD sh -c "npx prisma migrate deploy && npm run start:prod"
+CMD [ "node", "dist/src/server.js" ]
