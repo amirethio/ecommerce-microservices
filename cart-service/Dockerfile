@@ -36,7 +36,4 @@ COPY --from=builder /app/prisma.config.ts ./
 
 EXPOSE 3001
 
-# Use npx to ensure the CLI can read the .ts config if needed, 
-# but rely on ENV vars for the URL
-# CMD sh -c "npx prisma migrate deploy && npm run start:prod"
-CMD [ "npm", "run" , "start:prod" ]
+CMD sh -c "npx prisma migrate dev && npm run start:prod"

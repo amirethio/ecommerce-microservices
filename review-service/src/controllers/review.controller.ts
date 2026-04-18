@@ -2,18 +2,22 @@ import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { AppError } from "../utils/appError.js";
-import axios from "axios";
 import { ProductServiceClient } from "./../services/clients/product.service.client.js";
 import { OrderServiceClient } from "./../services/clients/order.service.client.js";
 import { UserServiceClient } from "../services/clients/user.service.client.js";
 
 const GATEWAY_SECRET = process.env.GATEWAY_SECRET || "super-secret-gateway-key";
-const Url = process.env.SERVICE_URL || "http://localhost";
+// get each services url from the environment
+const orderUrl = process.env.ORDER_SERVICE_URL || "http://localhost:3004";
+const productUrl = process.env.PRODUCT_SERVICE_URL || "http://localhost:3002";
+const userUrl = process.env.AUTH_SERVICE_URL || "http://localhost:3001";
+
+
 
 // initailzing client services
-const OrderService = new OrderServiceClient(`${Url}:3004`);
-const ProductService = new ProductServiceClient(`${Url}:3002`);
-const UserService = new UserServiceClient(`${Url}:3001`);
+const OrderService = new OrderServiceClient(orderUrl);
+const ProductService = new ProductServiceClient(productUrl);
+const UserService = new UserServiceClient(userUrl);
 // Validation schemas
 const createReviewSchema = z.object({
   productId: z.string().uuid(),

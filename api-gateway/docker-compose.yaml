@@ -28,7 +28,7 @@ services:
 networks:
   micro-network:
     external: true
-    name: microservies-net
+    name: microservices-net
 
 volumes:
   postgres-data:
