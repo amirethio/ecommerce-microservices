@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
-import { logger } from "./logger";
-import { AppError } from "./appError";
+import { logger } from "./logger.js";
+import { AppError } from "./appError.js";
 
 interface EmailOptions {
   to: string;

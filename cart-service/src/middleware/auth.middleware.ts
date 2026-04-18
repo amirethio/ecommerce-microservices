@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { AppError } from "../utils/appError";
+import { AppError } from "../utils/appError.js";
 
 // 1. Extend Express Request interface to include user
 declare global {

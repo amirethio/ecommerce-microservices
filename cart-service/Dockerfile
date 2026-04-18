@@ -1,29 +1,39 @@
-# 1. Use Node 20 Alpine as the base
-FROM node:20-alpine
-
-# 2. Install OpenSSL and libc6-compat (Required for Prisma on Alpine)
-RUN apk add --no-cache openssl libc6-compat
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# 3. Install pnpm globally
-RUN npm install -g pnpm
+# Copy package.json and package-lock.json
+COPY package*.json ./
 
-# 4. Copy dependency files
-COPY package.json pnpm-lock.yaml* ./
+# Install pnpm globally
 
-# 5. Install dependencies
-RUN pnpm install
 
-# 6. Copy the rest of the source code
+# Install dependencies
+RUN npm install 
+
+# Copy the rest of the application
 COPY . .
 
-# 7. Generate Prisma Client (This should work now with OpenSSL installed)
-RUN pnpm prisma generate
+# Generate Prisma client
+RUN npx prisma generate
 
-# 8. Validate TypeScript (The fix from earlier)
-RUN pnpm exec tsc --noEmit || true
+# Build the application
+RUN npm run build
 
-EXPOSE 3002
 
-CMD ["pnpm", "dev"]
+
+# Stage 2: Production
+FROM node:22-alpine AS production
+WORKDIR /app
+
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/generated ./generated
+# Copy the config to production stage
+COPY --from=builder /app/prisma.config.ts ./ 
+
+EXPOSE 3001
+
+CMD sh -c "npx prisma migrate dev && npm run start:prod"

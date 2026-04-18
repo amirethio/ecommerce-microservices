@@ -1,16 +1,14 @@
 import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
-import { AppError } from "../utils/appError";
+import { AppError } from "../utils/appError.js";
 
 import { ProductServiceClient } from "../services/clients/product.service.client.js";
 
 const Url = process.env.SERVICE_URL || "http://localhost";
-// construct the internal services
-// initailzing client services
-// const OrderService = new OrderServiceClient(`${Url}:3004`);
+
 const ProductService = new ProductServiceClient(`${Url}:3002`);
-// const UserService = new UserServiceClient(`${Url}:3001`);
+
 
 // Validation schemas
 const cartItemSchema = z.object({
