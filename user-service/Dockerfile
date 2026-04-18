@@ -39,4 +39,4 @@ EXPOSE 3001
 # Use npx to ensure the CLI can read the .ts config if needed, 
 # but rely on ENV vars for the URL
 # CMD sh -c "npx prisma migrate deploy && npm run start:prod"
-CMD [ "node", "dist/src/server.js" ]
+CMD [ "npm", "run" , "start:prod" ]
