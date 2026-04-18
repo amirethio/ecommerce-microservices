@@ -1,27 +1,18 @@
-FROM node:18-alpine
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package.json ./
+RUN npm install 
+COPY . .
+RUN npm run build
 
+FROM node:18-alpine AS production
 WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
+COPY package.json ./
 
-# Install pnpm globally
-RUN npm install -g pnpm
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
 
-# Install dependencies
-RUN pnpm install
-
-# Copy the rest of the application
-COPY . .
-
-# Generate Prisma client
-RUN npx prisma generate
-
-# Build the application
-RUN pnpm build
-
-# Expose the port
 EXPOSE 3000
 
-# Start the application with seed then production start
-CMD sh -c "pnpm prisma:migrate && pnpm seed && pnpm start:prod"
+CMD ["npm", "run", "start"]

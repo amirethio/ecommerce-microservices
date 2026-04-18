@@ -1,0 +1,34 @@
+name: api-gateway
+
+services:
+  service:
+    build:
+      context: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./.env
+    restart: always
+    networks:
+      - micro-network
+
+  postgres:
+    image: postgres:14.5-alpine
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - micro-network
+
+networks:
+  micro-network:
+    external: true
+    name: microservies-net
+
+volumes:
+  postgres-data:
