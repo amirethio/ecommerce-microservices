@@ -1,0 +1,17 @@
+name: "wishlist"
+services:
+  service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3005:3005"
+    env_file:
+      - ./.env
+    networks:
+      - micro-network
+
+networks:
+  micro-network:
+    external: true
+    name: microservices-net

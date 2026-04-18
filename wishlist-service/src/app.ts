@@ -3,11 +3,10 @@ import cors from "cors";
 import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsDoc from "swagger-jsdoc";
-import wishlistRoutes from "./routes/wishlist.routes";
-import internalRoutes from "./routes/internal.routes";
-import { errorHandler } from "./middleware/errorHandler";
-import { validateEnv } from "./utils/validateEnv";
-import { requireGateway } from "./middleware/gatewayMiddleware";
+import wishlistRoutes from "./routes/wishlist.routes.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+import { validateEnv } from "./utils/validateEnv.js";
+import { requireGateway } from "./middleware/gatewayMiddleware.js";
 
 validateEnv();
 
@@ -36,8 +35,10 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsDoc(swaggerOptions as any);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok" });
+});
 app.use("/wishlist", wishlistRoutes);
-app.use("/internal", internalRoutes);
 
 app.use(errorHandler);
 

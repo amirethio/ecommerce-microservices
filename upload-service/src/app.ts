@@ -7,7 +7,6 @@ import { validateEnv } from "./utils/validateEnv.js";
 import { requireGateway } from "./middlewares/gateway.middleware.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import uploadRoutes from "./routes/upload.routes.js";
-import internalRoutes from "./routes/internal.routes.js";
 import type { Express } from "express";
 
 validateEnv();
@@ -23,22 +22,24 @@ app.use(cors());
 app.use(helmet());
 
 const swaggerOptions = {
-	definition: {
-		openapi: "3.0.0",
-		info: {
-			title: "Upload Service",
-			version: "1.0.0",
-			description: "Upload Service API",
-		},
-	},
-	apis: ["./src/routes/*.ts"],
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Upload Service",
+      version: "1.0.0",
+      description: "Upload Service API",
+    },
+  },
+  apis: ["./src/routes/*.ts"],
 };
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions as any);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
+app.get("/health", (_req, res) => {
+  res.send({ status: "ok" });
+});
 app.use("/upload", uploadRoutes);
-app.use("/internal", internalRoutes);
 
 app.use(errorHandler);
 
