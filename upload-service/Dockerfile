@@ -1,15 +1,38 @@
-FROM node:22-alpine
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
+# Copy package.json and package-lock.json
 COPY package*.json ./
-RUN npm install -g pnpm
-RUN pnpm install
 
+
+
+# Install dependencies
+RUN npm install 
+
+# Copy the rest of the application
 COPY . .
 
-RUN pnpm build
+# Generate Prisma client
+RUN npx prisma generate
 
-EXPOSE 3000
+# Build the application
+RUN npm run build
 
-CMD sh -c "pnpm start:prod || pnpm start"
+
+
+# Stage 2: Production
+FROM node:22-alpine AS production
+WORKDIR /app
+
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/generated ./generated
+# Copy the config to production stage
+COPY --from=builder /app/prisma.config.ts ./ 
+
+EXPOSE 3006
+
+CMD sh -c "npx prisma migrate dev && npm run start:prod"

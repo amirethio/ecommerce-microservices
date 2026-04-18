@@ -1,8 +1,8 @@
-import { Router } from "express";
-import { getUploadUrl } from "../controllers/upload.controller";
-import { protect } from "../middlewares/auth.middleware";
+import express, { Router } from "express";
+import { getUploadUrl } from "../controllers/upload.controller.js";
+import { protect } from "../middlewares/auth.middleware.js";
 
-const router = Router();
+const router: Router = express.Router();
 
 router.post("/", protect, getUploadUrl);
 

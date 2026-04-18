@@ -3,15 +3,16 @@ import helmet from "helmet";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsDoc from "swagger-jsdoc";
-import { validateEnv } from "./utils/validateEnv";
-import { requireGateway } from "./middlewares/gateway.middleware";
-import { errorHandler } from "./middlewares/error.middleware";
-import uploadRoutes from "./routes/upload.routes";
-import internalRoutes from "./routes/internal.routes";
+import { validateEnv } from "./utils/validateEnv.js";
+import { requireGateway } from "./middlewares/gateway.middleware.js";
+import { errorHandler } from "./middlewares/error.middleware.js";
+import uploadRoutes from "./routes/upload.routes.js";
+import internalRoutes from "./routes/internal.routes.js";
+import type { Express } from "express";
 
 validateEnv();
 
-const app = express();
+const app: Express = express();
 
 app.set("trust proxy", true);
 app.use(requireGateway);
