@@ -1,9 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import axios from "axios";
-import { AppError } from "../utils/appError";
-import { addToWishlist, getWishlistByUserId, removeFromWishlist } from "../services/wishlist.service";
-import type { AuthRequest } from "../middleware/authMiddleware";
+import { AppError } from "../utils/appError.js";
+import { addToWishlist, getWishlistByUserId, removeFromWishlist } from "../services/wishlist.service.js";
+import type { AuthRequest } from "../middleware/authMiddleware.js";
 
 const wishlistItemSchema = z.object({
   productId: z.string().uuid(),
@@ -110,7 +110,7 @@ export const removeWishlistItem = async (req: Request, res: Response, next: Next
     const userId = getUserId(req, res);
     if (!userId) return;
 
-    const { productId } = req.params;
+    const { productId } = req.params as { productId: string };
     const updated = await removeFromWishlist(userId, productId);
 
     if (!updated) {

@@ -4,9 +4,9 @@ import helmet from "helmet";
 import compression from "compression";
 import { rateLimit } from "express-rate-limit";
 
-import reviewRoutes from "./routes/review.routes";
+import reviewRoutes from "./routes/review.routes.js";
 
-import { errorHandler } from "./middlewares/error.middleware";
+import { errorHandler } from "./middlewares/error.middleware.js";
 
 const app: express.Application = express();
 

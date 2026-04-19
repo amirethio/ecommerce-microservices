@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "start": "node dist/server.js",
-    "start:prod": "NODE_ENV=production node dist/server.js",
+    "start:prod": "NODE_ENV=production node dist/src/server.js",
     "dev": "nodemon --exec tsx src/server.ts",
     "build": "tsc",
     "prisma:generate": "prisma generate",
@@ -27,6 +27,7 @@
     "pg": "^8.20.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "uuid": "^13.0.0",
     "winston": "^3.8.2",
     "zod": "^4.3.6"
   },

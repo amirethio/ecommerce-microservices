@@ -1,4 +1,4 @@
-import prisma from "../config/db";
+import { prisma } from "../lib/prisma.js";
 
 export const getOrCreateWishlistByUserId = async (userId: string) => {
   let wishlist = await prisma.wishlist.findUnique({
@@ -75,4 +75,3 @@ export const removeFromWishlist = async (userId: string, productId: string) => {
 
   return updated;
 };
-

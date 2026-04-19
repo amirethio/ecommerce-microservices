@@ -1,46 +1,53 @@
 import type { Request, Response, NextFunction } from "express";
-import { PrismaClientInitializationError, PrismaClientKnownRequestError, PrismaClientValidationError } from "@prisma/client/runtime/library";
-import { AppError } from "../utils/appError";
-import { logger } from "../utils/logger";
+import { logger } from "../utils/logger.js";
+import { AppError } from "../utils/appError.js";
+import {
+  PrismaClientKnownRequestError,
+  PrismaClientValidationError,
+} from "@prisma/client/runtime/client.js";
 
 export const errorHandler = (
   err: Error,
-  _req: Request,
+  req: Request,
   res: Response,
-  _next: NextFunction,
+  next: NextFunction,
 ) => {
   logger.error(err);
+  console.log(err);
 
+  // Default error
   let statusCode = 500;
   let message = "Something went wrong";
-  let errors: any = undefined;
+  let errors: any = {};
 
+  // Handle AppError instances
   if (err instanceof AppError) {
     statusCode = err.statusCode;
     message = err.message;
     errors = err.errors;
-  } else if (err instanceof PrismaClientKnownRequestError) {
+  }
+  // Handle Prisma errors
+  else if (err instanceof PrismaClientKnownRequestError) {
     if (err.code === "P2002") {
       statusCode = 409;
-      message = "Duplicate field value";
-      errors = { fields: err.meta?.target };
-    }
-    if (err.code === "P2025") {
+      message = "Duplicate field value entered";
+      errors = {
+        field: err.meta?.target as string[],
+      };
+    } else if (err.code === "P2025") {
       statusCode = 404;
-      message = "Resource not found";
+      message = "Record not found";
     }
   } else if (err instanceof PrismaClientValidationError) {
     statusCode = 400;
-    message = "Invalid data provided";
-  } else if (err instanceof PrismaClientInitializationError) {
-    statusCode = 503;
-    message = "Database is unavailable. Ensure PostgreSQL is running and migrations are applied";
+    message = "Validation error";
   }
 
+  // Send error response
   res.status(statusCode).json({
     status: "error",
     message,
-    ...(errors && { errors }),
-    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+    errors: Object.keys(errors).length > 0 ? errors : undefined,
+    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
   });
 };
