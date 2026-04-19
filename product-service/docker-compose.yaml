@@ -1,11 +1,11 @@
-name: "coupon"
+name: "product"
 services:
   service:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3011:3011"
+      - "3002:3002"
     env_file:
       - ./.env
     networks:

@@ -8,8 +8,8 @@ import {
 	validateCoupon,
 	applyCoupon,
 	removeCoupon,
-} from "../controllers/coupon.controller";
-import { protect, restrictTo } from "../middlewares/auth.middleware";
+} from "../controllers/coupon.controller.js";
+import { protect, restrictTo } from "../middlewares/auth.middleware.js";
 
 const router: express.Router = express.Router();
 
