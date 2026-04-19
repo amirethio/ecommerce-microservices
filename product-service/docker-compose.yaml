@@ -1,0 +1,17 @@
+name: "product"
+services:
+  service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    env_file:
+      - ./.env
+    networks:
+      - micro-network
+
+networks:
+  micro-network:
+    external: true
+    name: microservices-net
