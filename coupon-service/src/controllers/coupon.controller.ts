@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
-import { AppError } from "../utils/appError";
+import { AppError } from "../utils/appError.js";
 import axios from "axios";
 
 // Validation schemas
