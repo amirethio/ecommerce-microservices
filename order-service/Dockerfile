@@ -1,17 +1,29 @@
-FROM node:22-alpine
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml* ./
+COPY package*.json ./
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
-RUN pnpm install
+RUN npm install 
 
 COPY . .
 
 RUN npx prisma generate
-RUN pnpm build
 
-EXPOSE 3004
+RUN npm run build
 
-CMD sh -c "pnpm prisma:migrate && pnpm start:prod"
+
+FROM node:22-alpine AS production
+WORKDIR /app
+
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/generated ./generated
+
+COPY --from=builder /app/prisma.config.ts ./ 
+
+EXPOSE 3002
+
+CMD sh -c "npx prisma migrate deploy && npm run start:prod"
